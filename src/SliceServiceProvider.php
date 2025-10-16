@@ -2,9 +2,9 @@
 
 namespace NickPotts\Slice;
 
+use NickPotts\Slice\Commands\SliceCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use NickPotts\Slice\Commands\SliceCommand;
 
 class SliceServiceProvider extends PackageServiceProvider
 {
