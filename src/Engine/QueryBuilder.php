@@ -95,6 +95,7 @@ class QueryBuilder
             $this->addDimensionSelects($query, $dimensions, $tables);
             $this->addGroupBy($query, $dimensions, $tables);
             $this->addDimensionFilters($query, $dimensions, $tables);
+            $this->addOrderBy($query, $dimensions, $tables);
         }
 
         return new DatabaseQueryPlan($query);
@@ -318,6 +319,34 @@ class QueryBuilder
                     $operator = $filters['where']['operator'];
                     $value = $filters['where']['value'];
                     $query->where($fullColumn, $operator, $value);
+                }
+            }
+        }
+    }
+
+    /**
+     * Add ORDER BY clauses for dimensions to ensure consistent ordering.
+     *
+     * @param  array<Dimension>  $dimensions
+     */
+    protected function addOrderBy(QueryAdapter $query, array $dimensions, array $tables, ?string $limitToTable = null): void
+    {
+        foreach ($dimensions as $dimension) {
+            $resolved = $this->dimensionResolver->resolveDimensionForTables($tables, $dimension);
+
+            foreach ($resolved as $tableName => $resolvedData) {
+                if ($limitToTable && $tableName !== $limitToTable) {
+                    continue;
+                }
+
+                $column = $this->dimensionResolver->getColumnForTable($resolvedData['table'], $dimension);
+
+                if ($dimension instanceof TimeDimension) {
+                    $granularity = $dimension->getGranularity();
+                    $orderExpr = $this->buildTimeDimensionSelect($tableName, $column, $granularity);
+                    $query->orderByRaw($orderExpr);
+                } else {
+                    $query->orderBy("{$tableName}.{$column}");
                 }
             }
         }
@@ -563,6 +592,7 @@ class QueryBuilder
             $this->addDimensionSelects($query, $dimensions, $tables);
             $this->addGroupBy($query, $dimensions, $tables);
             $this->addDimensionFilters($query, $dimensions, $tables);
+            $this->addOrderBy($query, $dimensions, $tables);
         }
 
         return $query;
