@@ -49,7 +49,7 @@ it('executes software CTE for cross-table computed metrics', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])
@@ -121,7 +121,7 @@ it('executes layered software CTEs (level 1 → level 2)', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])
@@ -160,7 +160,7 @@ it('handles NULL values in software CTE expressions', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])
@@ -209,7 +209,7 @@ it('combines database CTEs and software CTEs in same query', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])

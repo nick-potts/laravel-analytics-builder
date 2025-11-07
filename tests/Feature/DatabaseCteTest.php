@@ -44,7 +44,7 @@ it('executes single-level database CTE for computed metrics', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->get();
 
     expect($results)->toHaveCount(1)
@@ -97,7 +97,7 @@ it('executes multi-level database CTE with nested dependencies', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->get();
 
     expect($results)->toHaveCount(1)
@@ -128,7 +128,7 @@ it('executes database CTE with dimensions', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('created_at')->daily(),
         ])
@@ -165,7 +165,7 @@ it('handles NULLIF in database CTE to prevent division by zero', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('created_at')->daily(),
         ])
@@ -197,7 +197,7 @@ it('generates valid SQL with CTE syntax', function () {
     DB::enableQueryLog();
 
     Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->get();
 
     $queries = DB::getQueryLog();
