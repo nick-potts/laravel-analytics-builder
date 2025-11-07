@@ -62,4 +62,29 @@ interface QueryAdapter
      * Access to the underlying native builder when needed for low-level operations.
      */
     public function getNative(): mixed;
+
+    /**
+     * Add a common table expression (WITH clause).
+     *
+     * @param  string  $name  CTE name
+     * @param  \Closure|QueryAdapter  $query  The CTE query
+     */
+    public function withExpression(string $name, \Closure|QueryAdapter $query): void;
+
+    /**
+     * Select from a CTE or table.
+     */
+    public function from(string $table): void;
+
+    /**
+     * Select specific columns.
+     *
+     * @param  string|array<string>  $columns
+     */
+    public function select(string|array $columns): void;
+
+    /**
+     * Check if the driver supports CTEs.
+     */
+    public function supportsCTEs(): bool;
 }

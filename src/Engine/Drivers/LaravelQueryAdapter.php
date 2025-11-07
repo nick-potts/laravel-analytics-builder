@@ -60,4 +60,37 @@ class LaravelQueryAdapter implements QueryAdapter
     {
         return $this->builder;
     }
+
+    public function withExpression(string $name, \Closure|QueryAdapter $query): void
+    {
+        // Ensure we're using the CTE-enabled builder
+        if (! method_exists($this->builder, 'withExpression')) {
+            throw new \RuntimeException(
+                'CTE support requires staudenmeir/laravel-cte package. '.
+                'Run: composer require staudenmeir/laravel-cte'
+            );
+        }
+
+        if ($query instanceof QueryAdapter) {
+            // Extract the native Laravel builder
+            $query = $query->getNative();
+        }
+
+        $this->builder->withExpression($name, $query);
+    }
+
+    public function from(string $table): void
+    {
+        $this->builder->from($table);
+    }
+
+    public function select(string|array $columns): void
+    {
+        $this->builder->select($columns);
+    }
+
+    public function supportsCTEs(): bool
+    {
+        return method_exists($this->builder, 'withExpression');
+    }
 }
