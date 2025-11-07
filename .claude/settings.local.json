@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(cat:*)",
+      "mcp__jetbrains__list_directory_tree",
+      "Bash(vendor/bin/phpstan analyze:*)",
+      "Bash(vendor/bin/pest:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
