@@ -112,7 +112,7 @@ class QueryBuilder
             $adapter = $this->driver->createQuery($tableName);
 
             foreach ($tableJoinColumns[$tableName] ?? [] as $joinColumn) {
-                $adapter->selectRaw("{$tableName}.{$joinColumn['column']} as `{$joinColumn['alias']}`");
+                $adapter->selectRaw("{$tableName}.{$joinColumn['column']} as {$joinColumn['alias']}");
                 $adapter->groupBy("{$tableName}.{$joinColumn['column']}");
             }
 
@@ -223,7 +223,7 @@ class QueryBuilder
                     $alias = "{$tableName}_{$dimension->name()}";
                 }
 
-                $query->selectRaw("{$selectExpr} as `{$alias}`");
+                $query->selectRaw("{$selectExpr} as {$alias}");
             }
         }
     }
