@@ -30,14 +30,14 @@ interface QueryAdapter
     /**
      * Apply a whereIn constraint.
      *
-     * @param array<int, mixed> $values
+     * @param  array<int, mixed>  $values
      */
     public function whereIn(string $column, array $values): void;
 
     /**
      * Apply a whereNotIn constraint.
      *
-     * @param array<int, mixed> $values
+     * @param  array<int, mixed>  $values
      */
     public function whereNotIn(string $column, array $values): void;
 

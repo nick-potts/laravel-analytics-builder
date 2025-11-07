@@ -22,7 +22,7 @@ class Registry
     /**
      * Register a metric enum class.
      *
-     * @param class-string<MetricContract> $enumClass
+     * @param  class-string<MetricContract>  $enumClass
      */
     public function registerMetricEnum(string $enumClass): void
     {
@@ -165,4 +165,3 @@ class Registry
         return $enumClass::$caseName ?? null;
     }
 }
-

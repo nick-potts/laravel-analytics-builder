@@ -21,7 +21,7 @@ enum AdSpendMetric: string implements MetricContract
 
     public function table(): Table
     {
-        return new AdSpendTable();
+        return new AdSpendTable;
     }
 
     public function get(): Metric
@@ -57,4 +57,3 @@ enum AdSpendMetric: string implements MetricContract
         };
     }
 }
-

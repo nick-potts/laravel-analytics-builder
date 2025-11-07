@@ -12,9 +12,7 @@ class JoinResolver
     /**
      * Find the join path between two tables using BFS.
      *
-     * @param Table $from
-     * @param Table $to
-     * @param array<Table> $allTables
+     * @param  array<Table>  $allTables
      * @return array<array{from: string, to: string, relation: mixed}>|null
      */
     public function findJoinPath(Table $from, Table $to, array $allTables): ?array
@@ -32,7 +30,7 @@ class JoinResolver
 
             foreach ($currentTable->relations() as $relationName => $relation) {
                 $relatedTableClass = $relation->table();
-                $relatedTable = new $relatedTableClass();
+                $relatedTable = new $relatedTableClass;
                 $relatedTableName = $relatedTable->table();
 
                 if (isset($visited[$relatedTableName])) {
@@ -60,7 +58,7 @@ class JoinResolver
     /**
      * Apply joins to a query adapter based on the join path.
      *
-     * @param array<array{from: string, to: string, relation: mixed}> $joinPath
+     * @param  array<array{from: string, to: string, relation: mixed}>  $joinPath
      */
     public function applyJoins(QueryAdapter $query, array $joinPath): QueryAdapter
     {
@@ -93,7 +91,7 @@ class JoinResolver
     /**
      * Build a join graph connecting all required tables.
      *
-     * @param array<Table> $tables
+     * @param  array<Table>  $tables
      * @return array<array{from: string, to: string, relation: mixed}>
      */
     public function buildJoinGraph(array $tables): array

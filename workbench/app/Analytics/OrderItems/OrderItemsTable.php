@@ -2,7 +2,6 @@
 
 namespace Workbench\App\Analytics\OrderItems;
 
-use NickPotts\Slice\Schemas\Dimension;
 use NickPotts\Slice\Tables\Table;
 use Workbench\App\Analytics\Orders\OrdersTable;
 use Workbench\App\Analytics\Products\ProductsTable;

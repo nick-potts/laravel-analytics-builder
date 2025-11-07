@@ -9,8 +9,7 @@ class LaravelQueryAdapter implements QueryAdapter
 {
     public function __construct(
         protected Builder $builder
-    ) {
-    }
+    ) {}
 
     public function selectRaw(string $expression): void
     {
