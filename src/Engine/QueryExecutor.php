@@ -50,7 +50,7 @@ class QueryExecutor
     }
 
     /**
-     * @param array<string, array<int, array<string, mixed>>> $tableResults
+     * @param  array<string, array<int, array<string, mixed>>>  $tableResults
      * @return array<int, array<string, mixed>>
      */
     protected function performSoftwareJoins(SoftwareJoinQueryPlan $plan, array $tableResults): array
@@ -71,6 +71,7 @@ class QueryExecutor
                 if ($fromJoined && $toJoined) {
                     unset($pendingRelations[$index]);
                     $progress = true;
+
                     continue;
                 }
 
@@ -107,8 +108,8 @@ class QueryExecutor
     }
 
     /**
-     * @param array<int, array<string, mixed>> $leftRows
-     * @param array<int, array<string, mixed>> $rightRows
+     * @param  array<int, array<string, mixed>>  $leftRows
+     * @param  array<int, array<string, mixed>>  $rightRows
      * @return array<int, array<string, mixed>>
      */
     protected function joinRows(array $leftRows, array $rightRows, string $leftAlias, string $rightAlias): array
@@ -148,8 +149,8 @@ class QueryExecutor
     }
 
     /**
-     * @param array<int, array<string, mixed>> $rows
-     * @param array<string, array> $filters
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array<string, array>  $filters
      * @return array<int, array<string, mixed>>
      */
     protected function applyDimensionFilters(array $rows, array $filters): array
@@ -180,7 +181,7 @@ class QueryExecutor
     }
 
     /**
-     * @param array<int, array<string, mixed>> $rows
+     * @param  array<int, array<string, mixed>>  $rows
      * @return array<int, array<string, mixed>>
      */
     protected function groupSoftwareResults(array $rows, SoftwareJoinQueryPlan $plan): array
@@ -270,7 +271,7 @@ class QueryExecutor
     }
 
     /**
-     * @param array<int, mixed> $rows
+     * @param  array<int, mixed>  $rows
      * @return array<int, array<string, mixed>>
      */
     protected function normalizeRows(array $rows): array

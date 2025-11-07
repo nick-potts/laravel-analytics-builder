@@ -42,7 +42,7 @@ class SliceServiceProvider extends PackageServiceProvider
         $this->app['db']->extend('singlestore', function (array $config, string $name) {
             $config['name'] = $name;
 
-            $connector = new MySqlConnector();
+            $connector = new MySqlConnector;
             $pdo = $connector->connect($config);
 
             return new MySqlConnection($pdo, $config['database'] ?? null, $config['prefix'] ?? '', $config);

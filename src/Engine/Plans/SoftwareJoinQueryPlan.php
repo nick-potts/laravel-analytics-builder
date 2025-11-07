@@ -20,8 +20,7 @@ class SoftwareJoinQueryPlan implements QueryPlan
         protected array $metricAliases,
         protected array $dimensionFilters,
         protected array $joinAliases,
-    ) {
-    }
+    ) {}
 
     public function primaryTable(): string
     {

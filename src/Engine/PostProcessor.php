@@ -7,9 +7,8 @@ class PostProcessor
     /**
      * Process query results and calculate computed metrics.
      *
-     * @param array $rows Raw query results
-     * @param array $normalizedMetrics Normalized metrics from Slice
-     * @return ResultCollection
+     * @param  array  $rows  Raw query results
+     * @param  array  $normalizedMetrics  Normalized metrics from Slice
      */
     public function process(array $rows, array $normalizedMetrics): ResultCollection
     {
@@ -61,4 +60,3 @@ class PostProcessor
         return null;
     }
 }
-
