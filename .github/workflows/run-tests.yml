@@ -1,60 +1,71 @@
-name: run-tests
+name: CI
 
 on:
   push:
-    paths:
-      - '**.php'
-      - '.github/workflows/run-tests.yml'
-      - 'phpunit.xml.dist'
-      - 'composer.json'
-      - 'composer.lock'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
+  tests:
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        php: [8.4, 8.3]
-        laravel: [12.*, 11.*]
-        stability: [prefer-lowest, prefer-stable]
+        php: [8.4, 8.3, 8.2]
+        database: [mysql, mariadb, pgsql, sqlite, sqlsrv, singlestore]
+        release: [stable, lowest]
         include:
-          - laravel: 12.*
-            testbench: 10.*
-          - laravel: 11.*
-            testbench: 9.*
-
-    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
+          - php: 8.4
+            database: mysql
+            release: stable
+            coverage: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
+      - name: Check out code
+        uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
         with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
-          coverage: none
+          path: ~/.cache/composer/files
+          key: php-${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
 
-      - name: Setup problem matchers
-        run: |
-          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
+      - name: Start database container
+        if: matrix.database != 'sqlite'
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up --wait ${{ matrix.database }}
+
+      - name: Create SQL Server database
+        if: matrix.database == 'sqlsrv'
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml exec sqlsrv /opt/mssql-tools18/bin/sqlcmd -C -S 127.0.0.1 -U sa -P Password! -Q 'CREATE DATABASE [test]'
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction
+          SERVICE="php${{ matrix.php }}"
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm "$SERVICE" \
+            composer update --no-interaction --no-progress --prefer-dist --prefer-${{ matrix.release }}
 
-      - name: List Installed Dependencies
-        run: composer show -D
+      - name: Run tests
+        env:
+          COVERAGE_ARGS: ${{ matrix.coverage && '--coverage-clover=coverage.xml' || '' }}
+          DB_CONNECTION: ${{ matrix.database }}
+        run: |
+          SERVICE="php${{ matrix.php }}"
+          if [ "${{ matrix.coverage && 'true' || 'false' }}" = "true" ]; then
+            SERVICE="${SERVICE}-xdebug"
+          fi
 
-      - name: Execute tests
-        run: vendor/bin/pest --ci
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm -e DB_CONNECTION="$DB_CONNECTION" "$SERVICE" \
+            vendor/bin/pest --ci $COVERAGE_ARGS
+
+      - name: Upload code coverage
+        if: matrix.coverage && secrets.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Shutdown containers
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down --volumes --remove-orphans
