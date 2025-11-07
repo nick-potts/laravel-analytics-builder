@@ -137,14 +137,21 @@ class PostProcessor
             $expressionLanguage = new ExpressionLanguage;
 
             try {
-                // Register NULLIF function
-                $expressionLanguage->register(
-                    'NULLIF',
-                    fn ($a, $b) => "({$a} === {$b} ? null : {$a})",
-                    fn ($args, $a, $b) => $a === $b ? null : $a
+                // Pre-process NULLIF(a, b) to (a === b ? null : a) since Symfony doesn't support NULLIF
+                $expression = preg_replace_callback(
+                    '/NULLIF\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/',
+                    fn ($matches) => "(({$matches[1]}) == ({$matches[2]}) ? null : ({$matches[1]}))",
+                    $expression
                 );
 
-                return $expressionLanguage->evaluate($expression, $context);
+                $result = $expressionLanguage->evaluate($expression, $context);
+
+                // Cast to float if it's a numeric operation (division always returns float)
+                if (is_numeric($result) && ! is_float($result)) {
+                    return (float) $result;
+                }
+
+                return $result;
             } catch (\Exception $e) {
                 // Expression evaluation failed
                 return null;

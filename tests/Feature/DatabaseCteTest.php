@@ -7,13 +7,17 @@ use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Schemas\TimeDimension;
 use NickPotts\Slice\Slice;
 use NickPotts\Slice\Tables\Table;
+use Workbench\App\Models\Customer;
 use Workbench\App\Models\Order;
 
 beforeEach(function () {
+    // Create test customer
+    $customer = Customer::create(['name' => 'Test Customer', 'email' => 'test@example.com', 'segment' => 'general']);
+
     // Create test data
-    Order::create(['total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 2000, 'subtotal' => 800, 'shipping' => 150, 'tax' => 100, 'status' => 'completed', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 1500, 'subtotal' => 600, 'shipping' => 120, 'tax' => 80, 'status' => 'completed', 'created_at' => '2024-01-02']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 2000, 'subtotal' => 800, 'shipping' => 150, 'tax' => 100, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1500, 'subtotal' => 600, 'shipping' => 120, 'tax' => 80, 'status' => 'completed', 'created_at' => '2024-01-02']);
 });
 
 it('executes single-level database CTE for computed metrics', function () {
@@ -137,7 +141,8 @@ it('executes database CTE with dimensions', function () {
 
 it('handles NULLIF in database CTE to prevent division by zero', function () {
     // Add order with zero revenue
-    Order::create(['total' => 0, 'subtotal' => 0, 'shipping' => 0, 'tax' => 0, 'status' => 'completed', 'created_at' => '2024-01-03']);
+    $customer = Customer::first();
+    Order::create(['customer_id' => $customer->id, 'total' => 0, 'subtotal' => 0, 'shipping' => 0, 'tax' => 0, 'status' => 'completed', 'created_at' => '2024-01-03']);
 
     $metrics = [
         [

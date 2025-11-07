@@ -6,13 +6,17 @@ use NickPotts\Slice\Schemas\TimeDimension;
 use NickPotts\Slice\Slice;
 use NickPotts\Slice\Tables\Table;
 use Workbench\App\Models\AdSpend;
+use Workbench\App\Models\Customer;
 use Workbench\App\Models\Order;
 
 beforeEach(function () {
+    // Create test customer
+    $customer = Customer::create(['name' => 'Test Customer', 'email' => 'test@example.com', 'segment' => 'general']);
+
     // Create test data in two tables
-    Order::create(['total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 2000, 'subtotal' => 800, 'shipping' => 150, 'tax' => 100, 'status' => 'completed', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 1500, 'subtotal' => 600, 'shipping' => 120, 'tax' => 80, 'status' => 'completed', 'created_at' => '2024-01-02']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 2000, 'subtotal' => 800, 'shipping' => 150, 'tax' => 100, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1500, 'subtotal' => 600, 'shipping' => 120, 'tax' => 80, 'status' => 'completed', 'created_at' => '2024-01-02']);
 
     AdSpend::create(['spend' => 200, 'impressions' => 10000, 'clicks' => 500, 'channel' => 'google', 'date' => '2024-01-01']);
     AdSpend::create(['spend' => 150, 'impressions' => 8000, 'clicks' => 400, 'channel' => 'facebook', 'date' => '2024-01-01']);
@@ -132,7 +136,8 @@ it('executes layered software CTEs (level 1 → level 2)', function () {
 
 it('handles NULL values in software CTE expressions', function () {
     // Add day with no ad spend
-    Order::create(['total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-03']);
+    $customer = Customer::first();
+    Order::create(['customer_id' => $customer->id, 'total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-03']);
 
     $metrics = [
         [
