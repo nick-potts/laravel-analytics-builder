@@ -87,4 +87,14 @@ interface QueryAdapter
      * Check if the driver supports CTEs.
      */
     public function supportsCTEs(): bool;
+
+    /**
+     * Add an ORDER BY clause.
+     */
+    public function orderBy(string $column, string $direction = 'asc'): void;
+
+    /**
+     * Add a raw ORDER BY expression.
+     */
+    public function orderByRaw(string $expression): void;
 }
