@@ -55,11 +55,34 @@ class TestCase extends Orchestra
         $migrationPath = realpath(__DIR__.'/../workbench/database/migrations')
             ?: __DIR__.'/../workbench/database/migrations';
 
-        Artisan::call('migrate:fresh', [
-            '--database' => 'testing',
-            '--path' => $migrationPath,
-            '--realpath' => true,
-        ]);
+        // SingleStore doesn't support dropping multiple tables in a single query
+        // So we need to drop tables individually and then migrate (not migrate:fresh)
+        if ($this->connection === 'singlestore') {
+            $this->dropTablesIndividually();
+            Artisan::call('migrate', [
+                '--database' => 'testing',
+                '--path' => $migrationPath,
+                '--realpath' => true,
+            ]);
+        } else {
+            Artisan::call('migrate:fresh', [
+                '--database' => 'testing',
+                '--path' => $migrationPath,
+                '--realpath' => true,
+            ]);
+        }
+    }
+
+    protected function dropTablesIndividually(): void
+    {
+        $tables = DB::connection('testing')->select('SHOW TABLES');
+        $databaseName = DB::connection('testing')->getDatabaseName();
+        $tableKey = "Tables_in_{$databaseName}";
+
+        foreach ($tables as $table) {
+            $tableName = $table->$tableKey;
+            DB::connection('testing')->statement("DROP TABLE IF EXISTS `{$tableName}`");
+        }
     }
 
     protected function seedDatabase(): void
