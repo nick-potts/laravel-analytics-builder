@@ -10,7 +10,15 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('customer_id')->constrained('customers');
+
+            // SingleStore doesn't support foreign keys
+            $isSingleStore = Schema::getConnection()->getDriverName() === 'singlestore';
+            if ($isSingleStore) {
+                $table->unsignedBigInteger('customer_id');
+            } else {
+                $table->foreignId('customer_id')->constrained('customers');
+            }
+
             $table->string('status')->default('pending');
             $table->decimal('subtotal', 12, 2);
             $table->decimal('tax', 12, 2);
