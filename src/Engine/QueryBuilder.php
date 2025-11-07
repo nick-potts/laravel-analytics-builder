@@ -48,6 +48,24 @@ class QueryBuilder
             throw new \InvalidArgumentException('Unable to determine source tables for the requested metrics.');
         }
 
+        // Split metrics by computation strategy
+        $split = $this->dependencies->splitByComputationStrategy($normalizedMetrics);
+
+        // If we have cross-driver computed metrics, use software joins
+        $needsSoftwareJoin = count($tables) > 1 && ! $this->driver->supportsDatabaseJoins();
+        $hasSoftwareComputedMetrics = ! empty($split['software']);
+
+        if ($needsSoftwareJoin || $hasSoftwareComputedMetrics) {
+            // Use software join plan (PostProcessor will handle software CTEs)
+            return $this->buildSoftwareJoinPlan($tables, $normalizedMetrics, $dimensions);
+        }
+
+        // Single driver - check if we can use database CTEs
+        if ($this->driver->supportsCTEs() && $this->hasComputedMetrics($split['database'])) {
+            return $this->buildWithCTEs($tables, $split['database'], $dimensions);
+        }
+
+        // Standard database plan (no CTEs needed)
         if (count($tables) === 1 || $this->driver->supportsDatabaseJoins()) {
             return $this->buildDatabasePlan($tables, $normalizedMetrics, $dimensions);
         }
@@ -483,5 +501,139 @@ class QueryBuilder
         $clean = preg_replace('/[^A-Za-z0-9_]/', '_', $segment);
 
         return $clean === null ? $segment : $clean;
+    }
+
+    /**
+     * Build a query plan using CTEs for layered computed metrics.
+     *
+     * @param  array<int, \NickPotts\Slice\Tables\Table>  $tables
+     */
+    protected function buildWithCTEs(array $tables, array $normalizedMetrics, array $dimensions): DatabaseQueryPlan
+    {
+        // Group metrics by dependency level
+        $levels = $this->dependencies->groupByLevel($normalizedMetrics);
+
+        // Create base query from driver
+        $query = $this->driver->createQuery();
+
+        // Build CTEs layer by layer
+        $previousCTE = null;
+
+        foreach ($levels as $levelIndex => $levelMetrics) {
+            $cteName = "level_{$levelIndex}";
+
+            if ($levelIndex === 0) {
+                // Base level: Build aggregation query with joins
+                $cteQuery = $this->buildBaseAggregationCTE($tables, $levelMetrics, $dimensions);
+            } else {
+                // Computed level: Build from previous CTE
+                $cteQuery = $this->buildComputedCTE($previousCTE, $levelMetrics, $dimensions);
+            }
+
+            $query->withExpression($cteName, $cteQuery);
+            $previousCTE = $cteName;
+        }
+
+        // Final SELECT from last CTE
+        $query->from($previousCTE);
+        $query->select('*');
+
+        return new DatabaseQueryPlan($query);
+    }
+
+    /**
+     * Build base CTE with aggregations and joins.
+     */
+    protected function buildBaseAggregationCTE(array $tables, array $metrics, array $dimensions): QueryAdapter
+    {
+        $primaryTable = $tables[0];
+        $query = $this->driver->createQuery($primaryTable->table());
+
+        // Add joins
+        if (count($tables) > 1) {
+            $joinPath = $this->joinResolver->buildJoinGraph($tables);
+            $query = $this->joinResolver->applyJoins($query, $joinPath);
+        }
+
+        // Add metric selects
+        $this->addMetricSelects($query, $metrics);
+
+        // Add dimension selects and group by
+        if (! empty($dimensions)) {
+            $this->addDimensionSelects($query, $dimensions, $tables);
+            $this->addGroupBy($query, $dimensions, $tables);
+            $this->addDimensionFilters($query, $dimensions, $tables);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Build computed CTE from previous CTE.
+     */
+    protected function buildComputedCTE(string $fromCTE, array $metrics, array $dimensions): QueryAdapter
+    {
+        $query = $this->driver->createQuery($fromCTE);
+
+        // Select all existing columns
+        $query->select('*');
+
+        // Add computed metric expressions
+        foreach ($metrics as $metricData) {
+            $metric = $metricData['metric'];
+            $metricArray = $metric->toArray();
+
+            if ($metricArray['computed']) {
+                $expression = $this->translateComputedExpression(
+                    $metricArray['expression'],
+                    $metricArray['dependencies']
+                );
+
+                $alias = $metricData['key'];
+                $query->selectRaw("{$expression} as {$alias}");
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * Translate computed metric expression to use column aliases.
+     */
+    protected function translateComputedExpression(string $expression, array $dependencies): string
+    {
+        // Replace metric keys with actual column aliases
+        // e.g., "revenue - cost" → "orders_revenue - orders_cost"
+
+        $translated = $expression;
+
+        foreach ($dependencies as $depKey) {
+            // Convert "orders.revenue" → "orders_revenue"
+            $columnAlias = str_replace('.', '_', $depKey);
+
+            // Replace in expression (handle word boundaries)
+            $translated = preg_replace(
+                '/\b'.preg_quote($depKey, '/').'\b/',
+                $columnAlias,
+                $translated
+            );
+        }
+
+        return $translated;
+    }
+
+    /**
+     * Check if metrics array has any computed metrics.
+     */
+    protected function hasComputedMetrics(array $normalizedMetrics): bool
+    {
+        foreach ($normalizedMetrics as $metricData) {
+            $metricArray = $metricData['metric']->toArray();
+            if ($metricArray['computed'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
