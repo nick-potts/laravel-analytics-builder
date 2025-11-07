@@ -17,12 +17,12 @@ it('groups metrics by dependency level correctly', function () {
         [
             'key' => 'orders_revenue',
             'table' => $table,
-            'metric' => Sum::make('total')->label('Revenue'),
+            'metric' => Sum::make('orders.total')->label('Revenue'),
         ],
         [
             'key' => 'orders_cost',
             'table' => $table,
-            'metric' => Sum::make('cost')->label('Cost'),
+            'metric' => Sum::make('orders.cost')->label('Cost'),
         ],
         [
             'key' => 'orders_profit',
@@ -65,12 +65,12 @@ it('splits metrics into database and software computable strategies', function (
         [
             'key' => 'orders_revenue',
             'table' => $ordersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
             'key' => 'orders_cost',
             'table' => $ordersTable,
-            'metric' => Sum::make('cost'),
+            'metric' => Sum::make('orders.cost'),
         ],
         [
             'key' => 'orders_profit',
@@ -83,7 +83,7 @@ it('splits metrics into database and software computable strategies', function (
         [
             'key' => 'ad_spend_spend',
             'table' => $adSpendTable,
-            'metric' => Sum::make('spend'),
+            'metric' => Sum::make('ad_spend.spend'),
         ],
         // Cross-table - software computable
         [
@@ -130,10 +130,10 @@ it('handles complex multi-level dependencies', function () {
 
     $metrics = [
         // Level 0
-        ['key' => 'orders_revenue', 'table' => $table, 'metric' => Sum::make('total')],
-        ['key' => 'orders_cost', 'table' => $table, 'metric' => Sum::make('cost')],
-        ['key' => 'orders_shipping', 'table' => $table, 'metric' => Sum::make('shipping')],
-        ['key' => 'orders_count', 'table' => $table, 'metric' => Sum::make('id')],
+        ['key' => 'orders_revenue', 'table' => $table, 'metric' => Sum::make('orders.total')],
+        ['key' => 'orders_cost', 'table' => $table, 'metric' => Sum::make('orders.cost')],
+        ['key' => 'orders_shipping', 'table' => $table, 'metric' => Sum::make('orders.shipping')],
+        ['key' => 'orders_count', 'table' => $table, 'metric' => Sum::make('orders.id')],
 
         // Level 1
         [
@@ -194,8 +194,8 @@ it('correctly identifies when computed metric needs software computation', funct
     $customersTable = createMockTable('customers');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'customers_count', 'table' => $customersTable, 'metric' => Sum::make('id')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'customers_count', 'table' => $customersTable, 'metric' => Sum::make('customers.id')],
         [
             'key' => 'orders_revenue_per_customer',
             'table' => $ordersTable,
@@ -224,8 +224,8 @@ it('resolves dependencies in topological order', function () {
                 ->dependsOn('orders_profit', 'orders_revenue')
                 ->forTable($table),
         ],
-        ['key' => 'orders_revenue', 'table' => $table, 'metric' => Sum::make('total')],
-        ['key' => 'orders_cost', 'table' => $table, 'metric' => Sum::make('cost')],
+        ['key' => 'orders_revenue', 'table' => $table, 'metric' => Sum::make('orders.total')],
+        ['key' => 'orders_cost', 'table' => $table, 'metric' => Sum::make('orders.cost')],
         [
             'key' => 'orders_profit',
             'table' => $table,

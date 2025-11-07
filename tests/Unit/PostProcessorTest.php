@@ -15,8 +15,8 @@ it('processes basic software CTE with simple arithmetic', function () {
     $adSpendTable = createTestTable('ad_spend');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('spend')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('ad_spend.spend')],
         [
             'key' => 'marketing_roas',
             'table' => $ordersTable,
@@ -43,8 +43,8 @@ it('handles NULLIF to prevent division by zero', function () {
     $adSpendTable = createTestTable('ad_spend');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('spend')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('ad_spend.spend')],
         [
             'key' => 'marketing_roas',
             'table' => $ordersTable,
@@ -72,9 +72,9 @@ it('processes layered software CTEs (level 1 → level 2)', function () {
 
     $metrics = [
         // Level 0
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'orders_count', 'table' => $ordersTable, 'metric' => Sum::make('id')],
-        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('spend')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'orders_count', 'table' => $ordersTable, 'metric' => Sum::make('orders.id')],
+        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('ad_spend.spend')],
 
         // Level 1
         [
@@ -123,8 +123,8 @@ it('normalizes numeric values from database strings', function () {
     $ordersTable = createTestTable('orders');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'orders_count', 'table' => $ordersTable, 'metric' => Sum::make('id')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'orders_count', 'table' => $ordersTable, 'metric' => Sum::make('orders.id')],
     ];
 
     // Simulate database returning string values
@@ -146,9 +146,9 @@ it('handles complex expressions with multiple operations', function () {
     $ordersTable = createTestTable('orders');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'orders_cost', 'table' => $ordersTable, 'metric' => Sum::make('cost')],
-        ['key' => 'orders_shipping', 'table' => $ordersTable, 'metric' => Sum::make('shipping')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'orders_cost', 'table' => $ordersTable, 'metric' => Sum::make('orders.cost')],
+        ['key' => 'orders_shipping', 'table' => $ordersTable, 'metric' => Sum::make('orders.shipping')],
         [
             'key' => 'orders_net_profit',
             'table' => $ordersTable,
@@ -185,8 +185,8 @@ it('returns null when dependencies are missing', function () {
     $adSpendTable = createTestTable('ad_spend');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('spend')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('ad_spend.spend')],
         [
             'key' => 'marketing_roas',
             'table' => $ordersTable,
@@ -211,8 +211,8 @@ it('processes multiple rows independently', function () {
     $adSpendTable = createTestTable('ad_spend');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('spend')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'ad_spend_spend', 'table' => $adSpendTable, 'metric' => Sum::make('ad_spend.spend')],
         [
             'key' => 'marketing_roas',
             'table' => $ordersTable,
@@ -241,8 +241,8 @@ it('does not modify rows when there are no software-computed metrics', function 
     $ordersTable = createTestTable('orders');
 
     $metrics = [
-        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('total')],
-        ['key' => 'orders_count', 'table' => $ordersTable, 'metric' => Sum::make('id')],
+        ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
+        ['key' => 'orders_count', 'table' => $ordersTable, 'metric' => Sum::make('orders.id')],
     ];
 
     $rows = [
