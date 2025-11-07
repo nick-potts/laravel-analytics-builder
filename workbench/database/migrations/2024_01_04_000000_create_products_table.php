@@ -10,7 +10,15 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('sku')->unique();
+
+            // SingleStore requires unique keys to contain all shard key columns
+            $isSingleStore = Schema::getConnection()->getDriverName() === 'singlestore';
+            if ($isSingleStore) {
+                $table->string('sku');
+            } else {
+                $table->string('sku')->unique();
+            }
+
             $table->string('name');
             $table->decimal('price', 12, 2);
             $table->timestamps();

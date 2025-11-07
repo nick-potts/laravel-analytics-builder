@@ -10,8 +10,17 @@ return new class extends Migration
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained('products');
+
+            // SingleStore doesn't support foreign keys
+            $isSingleStore = Schema::getConnection()->getDriverName() === 'singlestore';
+            if ($isSingleStore) {
+                $table->unsignedBigInteger('order_id');
+                $table->unsignedBigInteger('product_id');
+            } else {
+                $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+                $table->foreignId('product_id')->constrained('products');
+            }
+
             $table->integer('quantity');
             $table->decimal('price', 12, 2);
             $table->decimal('cost', 12, 2)->default(0);
