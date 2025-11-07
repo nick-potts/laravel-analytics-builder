@@ -13,6 +13,7 @@ use NickPotts\Slice\Engine\Grammar\QueryGrammar;
 use NickPotts\Slice\Engine\Grammar\SingleStoreGrammar;
 use NickPotts\Slice\Engine\Grammar\SqliteGrammar;
 use NickPotts\Slice\Engine\Grammar\SqlServerGrammar;
+use Staudenmeir\LaravelCte\Query\Builder as CteBuilder;
 
 class LaravelQueryDriver implements QueryDriver
 {
@@ -36,9 +37,19 @@ class LaravelQueryDriver implements QueryDriver
         return DB::connection($this->connection)->getDriverName();
     }
 
-    public function createQuery(string $table): QueryAdapter
+    public function createQuery(?string $table = null): QueryAdapter
     {
-        $builder = DB::connection($this->connection)->table($table);
+        $connection = DB::connection($this->connection);
+
+        // Start with the CTE-capable builder if available
+        if (class_exists(CteBuilder::class)) {
+            $builder = new CteBuilder($connection);
+            if ($table) {
+                $builder->from($table);
+            }
+        } else {
+            $builder = $table ? $connection->table($table) : $connection->query();
+        }
 
         return new LaravelQueryAdapter($builder);
     }
@@ -106,5 +117,10 @@ class LaravelQueryDriver implements QueryDriver
     public function supportsDatabaseJoins(): bool
     {
         return true;
+    }
+
+    public function supportsCTEs(): bool
+    {
+        return class_exists(CteBuilder::class);
     }
 }

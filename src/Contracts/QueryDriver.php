@@ -14,7 +14,7 @@ interface QueryDriver
     /**
      * Create a fresh query adapter targeting the given table.
      */
-    public function createQuery(string $table): QueryAdapter;
+    public function createQuery(?string $table = null): QueryAdapter;
 
     /**
      * Get the grammar responsible for driver-specific SQL fragments.
@@ -25,4 +25,9 @@ interface QueryDriver
      * Determine if this driver can perform joins directly in the query execution layer.
      */
     public function supportsDatabaseJoins(): bool;
+
+    /**
+     * Determine if this driver supports Common Table Expressions (CTEs / WITH clauses).
+     */
+    public function supportsCTEs(): bool;
 }
