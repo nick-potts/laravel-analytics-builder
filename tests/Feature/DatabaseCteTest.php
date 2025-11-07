@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\DB;
 use NickPotts\Slice\Contracts\Metric;
-use NickPotts\Slice\Contracts\MetricContract;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Schemas\TimeDimension;

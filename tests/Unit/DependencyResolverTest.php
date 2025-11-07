@@ -1,7 +1,6 @@
 <?php
 
 use NickPotts\Slice\Engine\DependencyResolver;
-use NickPotts\Slice\Metrics\Avg;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Tables\Table;
