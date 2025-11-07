@@ -137,9 +137,16 @@ class PostProcessor
             $expressionLanguage = new ExpressionLanguage;
 
             try {
-                // Pre-process NULLIF(a, b) to (a === b ? null : a) since Symfony doesn't support NULLIF
+                // Pre-process division with NULLIF: X / NULLIF(Y, Z) => (Y == Z ? null : X / Y)
                 $expression = preg_replace_callback(
-                    '/NULLIF\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/',
+                    '/([^\s\/]+)\s*\/\s*NULLIF\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/i',
+                    fn ($matches) => "(({$matches[2]}) == ({$matches[3]}) ? null : ({$matches[1]}) / ({$matches[2]}))",
+                    $expression
+                );
+
+                // Also handle standalone NULLIF (not in division)
+                $expression = preg_replace_callback(
+                    '/NULLIF\s*\(\s*([^,]+?)\s*,\s*([^)]+?)\s*\)/i',
                     fn ($matches) => "(({$matches[1]}) == ({$matches[2]}) ? null : ({$matches[1]}))",
                     $expression
                 );

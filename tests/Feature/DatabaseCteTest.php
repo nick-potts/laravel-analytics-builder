@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\DB;
 use NickPotts\Slice\Contracts\Metric;
+use NickPotts\Slice\Facades\Slice;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Schemas\TimeDimension;
-use NickPotts\Slice\Slice;
 use NickPotts\Slice\Tables\Table;
 use Workbench\App\Models\Customer;
 use Workbench\App\Models\Order;

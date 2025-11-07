@@ -1,9 +1,9 @@
 <?php
 
+use NickPotts\Slice\Facades\Slice;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Schemas\TimeDimension;
-use NickPotts\Slice\Slice;
 use NickPotts\Slice\Tables\Table;
 use Workbench\App\Models\AdSpend;
 use Workbench\App\Models\Customer;
