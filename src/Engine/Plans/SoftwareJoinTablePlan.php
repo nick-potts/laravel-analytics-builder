@@ -10,8 +10,7 @@ class SoftwareJoinTablePlan
         protected string $table,
         protected QueryAdapter $adapter,
         protected bool $primary = false,
-    ) {
-    }
+    ) {}
 
     public function table(): string
     {

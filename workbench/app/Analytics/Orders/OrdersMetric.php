@@ -5,7 +5,6 @@ namespace Workbench\App\Analytics\Orders;
 use NickPotts\Slice\Contracts\EnumMetric;
 use NickPotts\Slice\Contracts\Metric;
 use NickPotts\Slice\Contracts\MetricContract;
-use NickPotts\Slice\Metrics\Avg;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Count;
 use NickPotts\Slice\Metrics\Sum;
@@ -24,7 +23,7 @@ enum OrdersMetric: string implements MetricContract
 
     public function table(): Table
     {
-        return new OrdersTable();
+        return new OrdersTable;
     }
 
     public function get(): Metric
@@ -65,4 +64,3 @@ enum OrdersMetric: string implements MetricContract
         };
     }
 }
-

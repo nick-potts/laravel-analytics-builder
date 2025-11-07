@@ -11,8 +11,7 @@ class SoftwareJoinRelation
         protected string $type,
         protected string $fromAlias,
         protected string $toAlias,
-    ) {
-    }
+    ) {}
 
     public function key(): string
     {

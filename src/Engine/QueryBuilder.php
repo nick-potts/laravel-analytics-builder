@@ -23,22 +23,22 @@ class QueryBuilder
         protected ?DimensionResolver $dimensionResolver = null,
         protected ?QueryDriver $driver = null,
     ) {
-        $this->dependencies ??= new DependencyResolver();
-        $this->joinResolver ??= new JoinResolver();
-        $this->dimensionResolver ??= new DimensionResolver();
+        $this->dependencies ??= new DependencyResolver;
+        $this->joinResolver ??= new JoinResolver;
+        $this->dimensionResolver ??= new DimensionResolver;
 
         if (! $this->driver) {
             $this->driver = function_exists('app') && app()->bound(QueryDriver::class)
                 ? app(QueryDriver::class)
-                : new LaravelQueryDriver();
+                : new LaravelQueryDriver;
         }
     }
 
     /**
      * Build a query plan from normalized metrics and dimensions.
      *
-     * @param array $normalizedMetrics Array from Slice::normalizeMetrics()
-     * @param array<Dimension> $dimensions
+     * @param  array  $normalizedMetrics  Array from Slice::normalizeMetrics()
+     * @param  array<Dimension>  $dimensions
      */
     public function build(array $normalizedMetrics, array $dimensions): QueryPlan
     {
@@ -58,7 +58,7 @@ class QueryBuilder
     /**
      * Build a plan that executes entirely within the database/driver.
      *
-     * @param array<int, \NickPotts\Slice\Tables\Table> $tables
+     * @param  array<int, \NickPotts\Slice\Tables\Table>  $tables
      */
     protected function buildDatabasePlan(array $tables, array $normalizedMetrics, array $dimensions): DatabaseQueryPlan
     {
@@ -85,7 +85,7 @@ class QueryBuilder
     /**
      * Build a plan that joins data in software when the driver cannot do so directly.
      *
-     * @param array<int, \NickPotts\Slice\Tables\Table> $tables
+     * @param  array<int, \NickPotts\Slice\Tables\Table>  $tables
      */
     protected function buildSoftwareJoinPlan(array $tables, array $normalizedMetrics, array $dimensions): SoftwareJoinQueryPlan
     {
@@ -194,8 +194,7 @@ class QueryBuilder
     /**
      * Add dimension select statements.
      *
-     * @param array<Dimension> $dimensions
-     * @param array $tables
+     * @param  array<Dimension>  $dimensions
      */
     protected function addDimensionSelects(QueryAdapter $query, array $dimensions, array $tables, ?string $limitToTable = null): void
     {
@@ -240,8 +239,7 @@ class QueryBuilder
     /**
      * Add GROUP BY clauses for dimensions.
      *
-     * @param array<Dimension> $dimensions
-     * @param array $tables
+     * @param  array<Dimension>  $dimensions
      */
     protected function addGroupBy(QueryAdapter $query, array $dimensions, array $tables, ?string $limitToTable = null): void
     {
@@ -269,8 +267,7 @@ class QueryBuilder
     /**
      * Add WHERE filters from dimensions.
      *
-     * @param array<Dimension> $dimensions
-     * @param array $tables
+     * @param  array<Dimension>  $dimensions
      */
     protected function addDimensionFilters(QueryAdapter $query, array $dimensions, array $tables, ?string $limitToTable = null): void
     {
@@ -309,8 +306,8 @@ class QueryBuilder
     }
 
     /**
-     * @param array<int, \NickPotts\Slice\Tables\Table> $tables
-     * @param array<Dimension> $dimensions
+     * @param  array<int, \NickPotts\Slice\Tables\Table>  $tables
+     * @param  array<Dimension>  $dimensions
      * @return array<int, string>
      */
     protected function collectDimensionAliases(array $tables, array $dimensions): array
@@ -329,8 +326,8 @@ class QueryBuilder
     }
 
     /**
-     * @param array<int, \NickPotts\Slice\Tables\Table> $tables
-     * @param array<Dimension> $dimensions
+     * @param  array<int, \NickPotts\Slice\Tables\Table>  $tables
+     * @param  array<Dimension>  $dimensions
      * @return array<string, array>
      */
     protected function collectDimensionFilters(array $tables, array $dimensions): array
@@ -355,7 +352,6 @@ class QueryBuilder
     }
 
     /**
-     * @param array $normalizedMetrics
      * @return array<int, string>
      */
     protected function collectMetricAliases(array $normalizedMetrics): array
@@ -382,10 +378,6 @@ class QueryBuilder
         return "{$tableName}_{$dimension->name()}";
     }
 
-    /**
-     * @param array $normalizedMetrics
-     * @return array
-     */
     protected function filterMetricsForTable(array $normalizedMetrics, string $tableName): array
     {
         return array_values(array_filter($normalizedMetrics, function ($metricData) use ($tableName) {
@@ -400,7 +392,7 @@ class QueryBuilder
     /**
      * Build join metadata for software joins.
      *
-     * @param array<int, array{from: string, to: string, relation: mixed}> $joinGraph
+     * @param  array<int, array{from: string, to: string, relation: mixed}>  $joinGraph
      * @return array{
      *     array<int, SoftwareJoinRelation>,
      *     array<string, array<int, array{alias: string, column: string}>>,
