@@ -8,7 +8,7 @@ class DependencyResolver
      * Resolve metric dependencies and return them in topological order.
      * Computed metrics that depend on other metrics will come after their dependencies.
      *
-     * @param array $normalizedMetrics Array from Slice::normalizeMetrics()
+     * @param  array  $normalizedMetrics  Array from Slice::normalizeMetrics()
      * @return array Same format, but sorted by dependencies
      */
     public function resolve(array $normalizedMetrics): array
@@ -88,4 +88,3 @@ class DependencyResolver
         $resolved[$key] = $metricData;
     }
 }
-

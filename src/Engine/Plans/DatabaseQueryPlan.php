@@ -8,8 +8,7 @@ class DatabaseQueryPlan implements QueryPlan
 {
     public function __construct(
         protected QueryAdapter $adapter
-    ) {
-    }
+    ) {}
 
     public function adapter(): QueryAdapter
     {

@@ -54,7 +54,6 @@ class LaravelQueryDriver implements QueryDriver
      * Example:
      * LaravelQueryDriver::extend('clickhouse', ClickhouseGrammar::class);
      *
-     * @param  string  $driverName
      * @param  class-string<QueryGrammar>  $grammarClass
      */
     public static function extend(string $driverName, string $grammarClass): void
@@ -88,19 +87,19 @@ class LaravelQueryDriver implements QueryDriver
         if (isset(static::$customGrammars[$driverName])) {
             $grammarClass = static::$customGrammars[$driverName];
 
-            return new $grammarClass();
+            return new $grammarClass;
         }
 
         // Built-in grammars
         return match ($driverName) {
-            'mysql' => new MySqlGrammar(),
-            'mariadb' => new MariaDbGrammar(),
-            'pgsql' => new PostgresGrammar(),
-            'sqlsrv' => new SqlServerGrammar(),
-            'singlestore' => new SingleStoreGrammar(),
-            'firebird' => new FirebirdGrammar(),
-            'sqlite' => new SqliteGrammar(),
-            default => new MySqlGrammar(), // Default fallback
+            'mysql' => new MySqlGrammar,
+            'mariadb' => new MariaDbGrammar,
+            'pgsql' => new PostgresGrammar,
+            'sqlsrv' => new SqlServerGrammar,
+            'singlestore' => new SingleStoreGrammar,
+            'firebird' => new FirebirdGrammar,
+            'sqlite' => new SqliteGrammar,
+            default => new MySqlGrammar, // Default fallback
         };
     }
 

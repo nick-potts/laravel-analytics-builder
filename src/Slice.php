@@ -5,8 +5,8 @@ namespace NickPotts\Slice;
 use NickPotts\Slice\Contracts\Metric;
 use NickPotts\Slice\Contracts\MetricContract as MetricEnum;
 use NickPotts\Slice\Contracts\QueryDriver;
-use NickPotts\Slice\Engine\Drivers\LaravelQueryDriver;
 use NickPotts\Slice\Engine\DimensionResolver;
+use NickPotts\Slice\Engine\Drivers\LaravelQueryDriver;
 use NickPotts\Slice\Engine\PostProcessor;
 use NickPotts\Slice\Engine\QueryBuilder;
 use NickPotts\Slice\Engine\QueryExecutor;
@@ -44,7 +44,7 @@ class Slice
         if (! $driver) {
             $driver = function_exists('app') && app()->bound(QueryDriver::class)
                 ? app(QueryDriver::class)
-                : new LaravelQueryDriver();
+                : new LaravelQueryDriver;
         }
 
         $this->driver = $driver;

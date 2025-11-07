@@ -5,15 +5,20 @@ namespace NickPotts\Slice\Schemas;
 class Dimension
 {
     protected string $name;
+
     protected ?string $label = null;
+
     protected ?string $column = null;
+
     protected string $type = 'string';
+
     protected array $meta = [];
+
     protected array $filters = [];
 
     public static function make(string $name): static
     {
-        $dimension = new static();
+        $dimension = new static;
         $dimension->name = $name;
 
         return $dimension;
