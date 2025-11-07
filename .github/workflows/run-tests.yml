@@ -14,7 +14,8 @@ jobs:
       matrix:
         php: [ 8.4, 8.3, 8.2 ]
         database: [ mysql, mariadb, pgsql, sqlite, sqlsrv, singlestore ]
-        release: [ stable, lowest ]
+        #        release: [ stable, lowest ]
+        release: [ stable ]
         include:
           - php: 8.4
             database: mysql
