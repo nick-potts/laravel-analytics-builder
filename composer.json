@@ -30,7 +30,8 @@
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-phpunit": "^2.0"
+        "phpstan/phpstan-phpunit": "^2.0",
+        "singlestoredb/singlestoredb-laravel": "^2.0"
     },
     "autoload": {
         "psr-4": {
