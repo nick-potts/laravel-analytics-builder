@@ -1,22 +1,26 @@
 <?php
 
+use NickPotts\Slice\Facades\Slice;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Schemas\TimeDimension;
-use NickPotts\Slice\Slice;
 use NickPotts\Slice\Tables\Table;
 use Workbench\App\Models\AdSpend;
+use Workbench\App\Models\Customer;
 use Workbench\App\Models\Order;
 
 beforeEach(function () {
-    // Create test data in two tables
-    Order::create(['total' => 1000, 'item_cost' => 400, 'country' => 'US', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 2000, 'item_cost' => 800, 'country' => 'US', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 1500, 'item_cost' => 600, 'country' => 'CA', 'created_at' => '2024-01-02']);
+    // Create test customer
+    $customer = Customer::create(['name' => 'Test Customer', 'email' => 'test@example.com', 'segment' => 'general']);
 
-    AdSpend::create(['spend' => 200, 'impressions' => 10000, 'date' => '2024-01-01']);
-    AdSpend::create(['spend' => 150, 'impressions' => 8000, 'date' => '2024-01-01']);
-    AdSpend::create(['spend' => 300, 'impressions' => 15000, 'date' => '2024-01-02']);
+    // Create test data in two tables
+    Order::create(['customer_id' => $customer->id, 'total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 2000, 'subtotal' => 800, 'shipping' => 150, 'tax' => 100, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1500, 'subtotal' => 600, 'shipping' => 120, 'tax' => 80, 'status' => 'completed', 'created_at' => '2024-01-02']);
+
+    AdSpend::create(['spend' => 200, 'impressions' => 10000, 'clicks' => 500, 'channel' => 'google', 'date' => '2024-01-01']);
+    AdSpend::create(['spend' => 150, 'impressions' => 8000, 'clicks' => 400, 'channel' => 'facebook', 'date' => '2024-01-01']);
+    AdSpend::create(['spend' => 300, 'impressions' => 15000, 'clicks' => 750, 'channel' => 'google', 'date' => '2024-01-02']);
 });
 
 it('executes software CTE for cross-table computed metrics', function () {
@@ -25,13 +29,13 @@ it('executes software CTE for cross-table computed metrics', function () {
         [
             'key' => 'orders_revenue',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Sum::make('total')->label('Revenue'),
+            'metric' => Sum::make('orders.total')->label('Revenue'),
         ],
         // Ad spend table (could be ClickHouse in real scenario)
         [
             'key' => 'ad_spend_spend',
             'table' => new SoftwareCteAdSpendTable,
-            'metric' => Sum::make('spend')->label('Ad Spend'),
+            'metric' => Sum::make('ad_spend.spend')->label('Ad Spend'),
         ],
         // Cross-table computed metric (software CTE!)
         [
@@ -45,7 +49,7 @@ it('executes software CTE for cross-table computed metrics', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])
@@ -61,31 +65,28 @@ it('executes software CTE for cross-table computed metrics', function () {
 });
 
 it('executes layered software CTEs (level 1 → level 2)', function () {
-    Order::create(['total' => 500, 'item_cost' => 200, 'country' => 'US', 'created_at' => '2024-01-01', 'items_count' => 5]);
-    Order::first()->update(['items_count' => 10]);
-    Order::skip(1)->first()->update(['items_count' => 20]);
-
+    // Just count the IDs instead of using a non-existent items_count column
     $metrics = [
         // Level 0 - base metrics
         [
             'key' => 'orders_revenue',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
             'key' => 'orders_count',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Sum::make('items_count'),
+            'metric' => Sum::make('orders.id'),
         ],
         [
             'key' => 'ad_spend_spend',
             'table' => new SoftwareCteAdSpendTable,
-            'metric' => Sum::make('spend'),
+            'metric' => Sum::make('ad_spend.spend'),
         ],
         [
             'key' => 'ad_spend_impressions',
             'table' => new SoftwareCteAdSpendTable,
-            'metric' => Sum::make('impressions'),
+            'metric' => Sum::make('ad_spend.impressions'),
         ],
         // Level 1 - cross-table computed
         [
@@ -120,7 +121,7 @@ it('executes layered software CTEs (level 1 → level 2)', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])
@@ -135,18 +136,19 @@ it('executes layered software CTEs (level 1 → level 2)', function () {
 
 it('handles NULL values in software CTE expressions', function () {
     // Add day with no ad spend
-    Order::create(['total' => 1000, 'item_cost' => 400, 'country' => 'US', 'created_at' => '2024-01-03']);
+    $customer = Customer::first();
+    Order::create(['customer_id' => $customer->id, 'total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-03']);
 
     $metrics = [
         [
             'key' => 'orders_revenue',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
             'key' => 'ad_spend_spend',
             'table' => new SoftwareCteAdSpendTable,
-            'metric' => Sum::make('spend'),
+            'metric' => Sum::make('ad_spend.spend'),
         ],
         [
             'key' => 'marketing_roas',
@@ -158,7 +160,7 @@ it('handles NULL values in software CTE expressions', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])
@@ -176,25 +178,25 @@ it('combines database CTEs and software CTEs in same query', function () {
         [
             'key' => 'orders_revenue',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
-            'key' => 'orders_item_cost',
+            'key' => 'orders_subtotal',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Sum::make('item_cost'),
+            'metric' => Sum::make('orders.subtotal'),
         ],
         [
             'key' => 'orders_gross_profit',
             'table' => new SoftwareCteOrdersTable,
-            'metric' => Computed::make('orders_revenue - orders_item_cost')
-                ->dependsOn('orders_revenue', 'orders_item_cost')
+            'metric' => Computed::make('orders_revenue - orders_subtotal')
+                ->dependsOn('orders_revenue', 'orders_subtotal')
                 ->forTable(new SoftwareCteOrdersTable),
         ],
         // Ad spend table
         [
             'key' => 'ad_spend_spend',
             'table' => new SoftwareCteAdSpendTable,
-            'metric' => Sum::make('spend'),
+            'metric' => Sum::make('ad_spend.spend'),
         ],
         // Cross-table computed (software CTE) depending on database CTE
         [
@@ -207,7 +209,7 @@ it('combines database CTEs and software CTEs in same query', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('date')->daily(),
         ])

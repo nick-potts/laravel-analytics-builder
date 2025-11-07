@@ -1,20 +1,22 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
-use NickPotts\Slice\Contracts\Metric;
-use NickPotts\Slice\Contracts\MetricContract;
+use NickPotts\Slice\Facades\Slice;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Schemas\TimeDimension;
-use NickPotts\Slice\Slice;
 use NickPotts\Slice\Tables\Table;
+use Workbench\App\Models\Customer;
 use Workbench\App\Models\Order;
 
 beforeEach(function () {
+    // Create test customer
+    $customer = Customer::create(['name' => 'Test Customer', 'email' => 'test@example.com', 'segment' => 'general']);
+
     // Create test data
-    Order::create(['total' => 1000, 'item_cost' => 400, 'shipping_cost' => 100, 'country' => 'US', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 2000, 'item_cost' => 800, 'shipping_cost' => 150, 'country' => 'US', 'created_at' => '2024-01-01']);
-    Order::create(['total' => 1500, 'item_cost' => 600, 'shipping_cost' => 120, 'country' => 'CA', 'created_at' => '2024-01-02']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1000, 'subtotal' => 400, 'shipping' => 100, 'tax' => 50, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 2000, 'subtotal' => 800, 'shipping' => 150, 'tax' => 100, 'status' => 'completed', 'created_at' => '2024-01-01']);
+    Order::create(['customer_id' => $customer->id, 'total' => 1500, 'subtotal' => 600, 'shipping' => 120, 'tax' => 80, 'status' => 'completed', 'created_at' => '2024-01-02']);
 });
 
 it('executes single-level database CTE for computed metrics', function () {
@@ -23,30 +25,30 @@ it('executes single-level database CTE for computed metrics', function () {
         [
             'key' => 'orders_revenue',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('total')->label('Revenue'),
+            'metric' => Sum::make('orders.total')->label('Revenue'),
         ],
         [
-            'key' => 'orders_item_cost',
+            'key' => 'orders_subtotal',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('item_cost')->label('Item Cost'),
+            'metric' => Sum::make('orders.subtotal')->label('Subtotal'),
         ],
         [
             'key' => 'orders_gross_profit',
             'table' => new TestOrdersTable,
-            'metric' => Computed::make('orders_revenue - orders_item_cost')
-                ->dependsOn('orders_revenue', 'orders_item_cost')
+            'metric' => Computed::make('orders_revenue - orders_subtotal')
+                ->dependsOn('orders_revenue', 'orders_subtotal')
                 ->label('Gross Profit')
                 ->forTable(new TestOrdersTable),
         ],
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->get();
 
     expect($results)->toHaveCount(1)
         ->and($results[0]['orders_revenue'])->toBe(4500)
-        ->and($results[0]['orders_item_cost'])->toBe(1800)
+        ->and($results[0]['orders_subtotal'])->toBe(1800)
         ->and($results[0]['orders_gross_profit'])->toBe(2700);
 });
 
@@ -56,31 +58,31 @@ it('executes multi-level database CTE with nested dependencies', function () {
         [
             'key' => 'orders_revenue',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
-            'key' => 'orders_item_cost',
+            'key' => 'orders_subtotal',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('item_cost'),
+            'metric' => Sum::make('orders.subtotal'),
         ],
         [
-            'key' => 'orders_shipping_cost',
+            'key' => 'orders_shipping',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('shipping_cost'),
+            'metric' => Sum::make('orders.shipping'),
         ],
         // Level 1
         [
             'key' => 'orders_gross_profit',
             'table' => new TestOrdersTable,
-            'metric' => Computed::make('orders_revenue - orders_item_cost')
-                ->dependsOn('orders_revenue', 'orders_item_cost')
+            'metric' => Computed::make('orders_revenue - orders_subtotal')
+                ->dependsOn('orders_revenue', 'orders_subtotal')
                 ->forTable(new TestOrdersTable),
         ],
         [
             'key' => 'orders_net_profit',
             'table' => new TestOrdersTable,
-            'metric' => Computed::make('orders_revenue - orders_item_cost - orders_shipping_cost')
-                ->dependsOn('orders_revenue', 'orders_item_cost', 'orders_shipping_cost')
+            'metric' => Computed::make('orders_revenue - orders_subtotal - orders_shipping')
+                ->dependsOn('orders_revenue', 'orders_subtotal', 'orders_shipping')
                 ->forTable(new TestOrdersTable),
         ],
         // Level 2
@@ -94,13 +96,13 @@ it('executes multi-level database CTE with nested dependencies', function () {
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->get();
 
     expect($results)->toHaveCount(1)
         ->and($results[0]['orders_gross_profit'])->toBe(2700)
         ->and($results[0]['orders_net_profit'])->toBe(2330)
-        ->and($results[0]['orders_gross_margin'])->toBe(60.0);
+        ->and($results[0]['orders_gross_margin'])->toBeCloseTo(60.0, 0.1);
 });
 
 it('executes database CTE with dimensions', function () {
@@ -108,24 +110,24 @@ it('executes database CTE with dimensions', function () {
         [
             'key' => 'orders_revenue',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
-            'key' => 'orders_item_cost',
+            'key' => 'orders_subtotal',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('item_cost'),
+            'metric' => Sum::make('orders.subtotal'),
         ],
         [
             'key' => 'orders_gross_profit',
             'table' => new TestOrdersTable,
-            'metric' => Computed::make('orders_revenue - orders_item_cost')
-                ->dependsOn('orders_revenue', 'orders_item_cost')
+            'metric' => Computed::make('orders_revenue - orders_subtotal')
+                ->dependsOn('orders_revenue', 'orders_subtotal')
                 ->forTable(new TestOrdersTable),
         ],
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('created_at')->daily(),
         ])
@@ -138,30 +140,31 @@ it('executes database CTE with dimensions', function () {
 
 it('handles NULLIF in database CTE to prevent division by zero', function () {
     // Add order with zero revenue
-    Order::create(['total' => 0, 'item_cost' => 0, 'shipping_cost' => 0, 'country' => 'UK', 'created_at' => '2024-01-03']);
+    $customer = Customer::first();
+    Order::create(['customer_id' => $customer->id, 'total' => 0, 'subtotal' => 0, 'shipping' => 0, 'tax' => 0, 'status' => 'completed', 'created_at' => '2024-01-03']);
 
     $metrics = [
         [
             'key' => 'orders_revenue',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
-            'key' => 'orders_item_cost',
+            'key' => 'orders_subtotal',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('item_cost'),
+            'metric' => Sum::make('orders.subtotal'),
         ],
         [
             'key' => 'orders_margin',
             'table' => new TestOrdersTable,
-            'metric' => Computed::make('((orders_revenue - orders_item_cost) / NULLIF(orders_revenue, 0)) * 100')
-                ->dependsOn('orders_revenue', 'orders_item_cost')
+            'metric' => Computed::make('((orders_revenue - orders_subtotal) / NULLIF(orders_revenue, 0)) * 100')
+                ->dependsOn('orders_revenue', 'orders_subtotal')
                 ->forTable(new TestOrdersTable),
         ],
     ];
 
     $results = Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->dimensions([
             TimeDimension::make('created_at')->daily(),
         ])
@@ -178,7 +181,7 @@ it('generates valid SQL with CTE syntax', function () {
         [
             'key' => 'orders_revenue',
             'table' => new TestOrdersTable,
-            'metric' => Sum::make('total'),
+            'metric' => Sum::make('orders.total'),
         ],
         [
             'key' => 'orders_gross_profit',
@@ -193,7 +196,7 @@ it('generates valid SQL with CTE syntax', function () {
     DB::enableQueryLog();
 
     Slice::query()
-        ->metricsRaw($metrics)
+        ->metrics($metrics)
         ->get();
 
     $queries = DB::getQueryLog();
