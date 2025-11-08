@@ -2,8 +2,6 @@
 
 namespace NickPotts\Slice\Contracts;
 
-use Illuminate\Database\Query\Builder;
-
 /**
  * Represents an aggregation metric computed in SQL (SUM, COUNT, AVG, etc.).
  */
@@ -27,10 +25,10 @@ interface AggregationMetric extends Metric
     public function aggregation(): string;
 
     /**
-     * Apply this aggregation to the query builder.
+     * Apply this aggregation to the query adapter.
      *
-     * @param  Builder  $query  The Laravel query builder
+     * @param  QueryAdapter  $query  The query adapter
      * @param  string  $alias  The column alias to use
      */
-    public function applyToQuery(Builder $query, string $alias): void;
+    public function applyToQuery(QueryAdapter $query, string $alias): void;
 }

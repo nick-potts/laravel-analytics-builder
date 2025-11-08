@@ -2,9 +2,9 @@
 
 namespace NickPotts\Slice\Metrics;
 
-use Illuminate\Database\Query\Builder;
 use InvalidArgumentException;
 use NickPotts\Slice\Contracts\AggregationMetric;
+use NickPotts\Slice\Contracts\QueryAdapter;
 
 /**
  * Base class for aggregation metrics.
@@ -119,7 +119,7 @@ abstract class BaseAggregation implements AggregationMetric
         return "{$this->table}_{$this->column}";
     }
 
-    public function applyToQuery(Builder $query, string $alias): void
+    public function applyToQuery(QueryAdapter $query, string $alias): void
     {
         $aggregation = strtoupper($this->aggregation());
         $column = "{$this->table}.{$this->column}";
