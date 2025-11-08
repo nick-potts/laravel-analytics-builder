@@ -4,10 +4,10 @@
  * CURRENT SCHEMA - What your existing query would look like in Slice
  */
 
-use NickPotts\Slice\Slice;
 use NickPotts\Slice\Metrics\Count;
-use NickPotts\Slice\Schemas\TimeDimension;
 use NickPotts\Slice\Schemas\Dimension;
+use NickPotts\Slice\Schemas\TimeDimension;
+use NickPotts\Slice\Slice;
 
 // Define the tables
 class IssuesTable extends \NickPotts\Slice\Tables\Table
@@ -90,7 +90,6 @@ $currentQuery = Slice::query()
 /**
  * DENORMALIZED APPROACH 1: Flatten terms into taxables
  */
-
 class TaxablesTable extends \NickPotts\Slice\Tables\Table
 {
     protected string $table = 'taxables';
@@ -143,7 +142,6 @@ $denormQuery1 = Slice::query()
 /**
  * DENORMALIZED APPROACH 2: Flatten terms into tenant_issue (BEST for SingleStore!)
  */
-
 class TenantIssueDenormalizedTable extends \NickPotts\Slice\Tables\Table
 {
     protected string $table = 'tenant_issue';
@@ -172,6 +170,7 @@ class TermIdsDimension extends Dimension
     {
         // This would need custom grammar support for JSON_CONTAINS or JSON_OVERLAPS
         $this->addFilter('contains_any', $termIds);
+
         return $this;
     }
 }
@@ -209,7 +208,6 @@ $denormQuery2 = Slice::query()
 /**
  * DENORMALIZED APPROACH 3: Dedicated join table (middle ground)
  */
-
 class TenantIssueTermsTable extends \NickPotts\Slice\Tables\Table
 {
     protected string $table = 'tenant_issue_terms';
