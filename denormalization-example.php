@@ -1,7 +1,7 @@
 <?php
 
 /**
- * CURRENT SCHEMA - What your existing query would look like in Slice
+ * YOUR MONSTER QUERY - Can current Slice handle it? Let's see...
  */
 
 use NickPotts\Slice\Metrics\Count;
@@ -9,7 +9,18 @@ use NickPotts\Slice\Schemas\Dimension;
 use NickPotts\Slice\Schemas\TimeDimension;
 use NickPotts\Slice\Slice;
 
-// Define the tables
+/**
+ * ANSWER: NO - Current Slice cannot replicate this query exactly because:
+ *
+ * 1. No support for whereExists() with subqueries
+ * 2. No support for polymorphic relation filtering (taxable_type)
+ * 3. No way to express "join to tenant_issue WHERE ti_tenant_id = X AND ti_deleted_at IS NULL"
+ *    (those are join conditions, not WHERE conditions)
+ *
+ * But here's the CLOSEST you could get with current Slice API:
+ */
+
+// Step 1: Define your tables (this is what you'd need to set up)
 class IssuesTable extends \NickPotts\Slice\Tables\Table
 {
     protected string $table = 'issues';
@@ -25,13 +36,7 @@ class IssuesTable extends \NickPotts\Slice\Tables\Table
     public function relations(): array
     {
         return [
-            // Polymorphic many-to-many through taxables
-            'terms' => $this->belongsToMany(
-                TermsTable::class,
-                'taxables',
-                'taxable_id',
-                'term_id'
-            )->where('taxable_type', 'Issue'),
+            'tenant_issue' => $this->hasMany(TenantIssueTable::class, 'ti_issue_id'),
         ];
     }
 }
@@ -45,6 +50,7 @@ class TenantIssueTable extends \NickPotts\Slice\Tables\Table
         return [
             TimeDimension::class => TimeDimension::make('ti_published_at')->asTimestamp(),
             TenantDimension::class => TenantDimension::make('ti_tenant_id'),
+            WithdrawnDimension::class => WithdrawnDimension::make('ti_withdrawn'),
         ];
     }
 
@@ -56,36 +62,89 @@ class TenantIssueTable extends \NickPotts\Slice\Tables\Table
     }
 }
 
-class TermsTable extends \NickPotts\Slice\Tables\Table
-{
-    protected string $table = 'terms';
-
-    public function dimensions(): array
-    {
-        return [
-            TenantDimension::class => TenantDimension::make('tenant_id'),
-            TermDimension::class => TermDimension::make('id'),
-        ];
-    }
-}
-
-// Current schema query - This would generate JOINS but still need EXISTS logic
-$currentQuery = Slice::query()
+// Step 2: Your Slice query (as close as possible without modifications)
+$result = Slice::query()
     ->metrics([
-        Count::make('tenant_issue.ti_issue_id')->label('Issue Count'),
+        Count::make('issues.id')->label('Total Issues'),
     ])
     ->dimensions([
         TimeDimension::make('ti_published_at')->daily(),
-        TenantDimension::make('ti_tenant_id')->only([1]), // Your @ parameter
     ])
+    // These work fine in current Slice
     ->where('ti_published_at', '<=', now())
-    ->where('ti_withdrawn', false)
-    ->where('conversion_status', 'in', ['completed', 'pending']) // Your ^ parameters
+    ->where('ti_withdrawn', '=', false)
+    ->where('ti_tenant_id', '=', 1)
+    ->where('conversion_status', 'in', ['completed', 'pending'])
     ->where('file_type', '!=', 'pdf')
-    // Problem: How to filter by terms efficiently?
-    // This would require joining through issues -> taxables -> terms
-    // and Slice would generate similar expensive EXISTS or JOINs
+    ->where('file_type', '!=', 'another_bad_type')
+    // PROBLEM: No way to add the EXISTS subquery for terms filtering!
+    // Current Slice doesn't have ->whereExists() or ->whereHas()
+    ->orderBy('ti_published_at', 'desc')
+    ->orderBy('ti_issue_id', 'desc')
+    ->limit(50)
+    ->offset(0)
     ->get();
+
+/**
+ * What Laravel PHP would this generate? Something like:
+ */
+
+use Illuminate\Support\Facades\DB;
+
+$laravelQuery = DB::table('issues')
+    ->join('tenant_issue', function($join) {
+        $join->on('ti_issue_id', '=', 'issues.id')
+             ->where('ti_tenant_id', '=', 1) // Slice puts filters in join conditions when needed
+             ->whereNull('ti_deleted_at');
+    })
+    ->select([
+        DB::raw('COUNT(issues.id) as total_issues'),
+        DB::raw('DATE(tenant_issue.ti_published_at) as date'),
+    ])
+    ->where('tenant_issue.ti_published_at', '<=', now())
+    ->where('tenant_issue.ti_withdrawn', '=', false)
+    ->whereIn('issues.conversion_status', ['completed', 'pending'])
+    ->where('issues.file_type', '!=', 'pdf')
+    ->whereNull('issues.deleted_at')
+    // MISSING: The EXISTS clause - Slice can't add this!
+    // ->whereExists(function($query) {
+    //     $query->select(DB::raw(1))
+    //           ->from('terms')
+    //           ->join('taxables', 'terms.id', '=', 'taxables.term_id')
+    //           ->whereColumn('issues.id', 'taxables.taxable_id')
+    //           ->where('taxables.taxable_type', 'Issue')
+    //           ->where('terms.tenant_id', 1)
+    //           ->whereIn('terms.id', [5, 10, 15]);
+    // })
+    ->groupBy(DB::raw('DATE(tenant_issue.ti_published_at)'))
+    ->orderBy('ti_published_at', 'desc')
+    ->orderBy('ti_issue_id', 'desc')
+    ->limit(50)
+    ->offset(0)
+    ->get();
+
+/**
+ * WORKAROUND: You'd need to manually add the EXISTS after Slice builds the query
+ */
+
+// Get the Slice query builder (this doesn't exist in current API!)
+// $query = Slice::query()
+//     ->metrics([Count::make('issues.id')])
+//     ->dimensions([TimeDimension::make('ti_published_at')->daily()])
+//     ->where('ti_tenant_id', '=', 1)
+//     ->toQuery(); // ← This method doesn't exist yet!
+//
+// // Then add your custom WHERE EXISTS
+// $query->whereExists(function($q) {
+//     $q->select(DB::raw(1))
+//       ->from('terms')
+//       ->join('taxables', 'terms.id', '=', 'taxables.term_id')
+//       ->whereColumn('issues.id', 'taxables.taxable_id')
+//       ->where('taxables.taxable_type', 'Issue')
+//       ->whereIn('terms.id', [5, 10, 15]);
+// });
+//
+// $result = $query->get();
 
 /**
  * DENORMALIZED APPROACH 1: Flatten terms into taxables
