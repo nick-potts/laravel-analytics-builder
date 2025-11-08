@@ -9,8 +9,8 @@ class SoftwareJoinRelation
         protected string $from,
         protected string $to,
         protected string $type,
-        protected string $fromAlias,
-        protected string $toAlias,
+        protected ?string $fromAlias,
+        protected ?string $toAlias,
     ) {}
 
     public function key(): string
@@ -33,12 +33,12 @@ class SoftwareJoinRelation
         return $this->type;
     }
 
-    public function fromAlias(): string
+    public function fromAlias(): ?string
     {
         return $this->fromAlias;
     }
 
-    public function toAlias(): string
+    public function toAlias(): ?string
     {
         return $this->toAlias;
     }

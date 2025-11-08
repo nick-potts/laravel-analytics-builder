@@ -145,23 +145,27 @@ it('normalizes numeric values from database strings', function () {
 it('handles complex expressions with multiple operations', function () {
     $ordersTable = createTestTable('orders');
 
+    $netProfit = Computed::make('orders_revenue - orders_cost - orders_shipping')
+        ->dependsOn('orders_revenue', 'orders_cost', 'orders_shipping')
+        ->forTable($ordersTable);
+
+    $netMargin = Computed::make('('.$netProfit->key().' / NULLIF(orders_revenue, 0)) * 100')
+        ->dependsOn($netProfit, 'orders_revenue')
+        ->forTable($ordersTable);
+
     $metrics = [
         ['key' => 'orders_revenue', 'table' => $ordersTable, 'metric' => Sum::make('orders.total')],
         ['key' => 'orders_cost', 'table' => $ordersTable, 'metric' => Sum::make('orders.cost')],
         ['key' => 'orders_shipping', 'table' => $ordersTable, 'metric' => Sum::make('orders.shipping')],
         [
-            'key' => 'orders_net_profit',
+            'key' => $netProfit->key(),
             'table' => $ordersTable,
-            'metric' => Computed::make('orders_revenue - orders_cost - orders_shipping')
-                ->dependsOn('orders_revenue', 'orders_cost', 'orders_shipping')
-                ->forTable($ordersTable),
+            'metric' => $netProfit,
         ],
         [
-            'key' => 'orders_net_margin',
+            'key' => $netMargin->key(),
             'table' => $ordersTable,
-            'metric' => Computed::make('(orders_net_profit / NULLIF(orders_revenue, 0)) * 100')
-                ->dependsOn('orders_net_profit', 'orders_revenue')
-                ->forTable($ordersTable),
+            'metric' => $netMargin,
         ],
     ];
 
@@ -176,8 +180,8 @@ it('handles complex expressions with multiple operations', function () {
     $result = $this->processor->process($rows, $metrics);
     $data = $result->toArray()[0];
 
-    expect($data['orders_net_profit'])->toBe(500)
-        ->and($data['orders_net_margin'])->toBe(50.0);
+    expect($data[$netProfit->key()])->toBe(500)
+        ->and($data[$netMargin->key()])->toBe(50.0);
 });
 
 it('returns null when dependencies are missing', function () {

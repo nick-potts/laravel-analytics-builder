@@ -15,11 +15,24 @@ class PostProcessor
     /**
      * Process query results and calculate computed metrics.
      * Supports both single-row and multi-row results with software CTEs.
+     *
+     * @param  bool  $forceSoftwareComputation  When true, computed metrics that would normally run
+     *                                          in the database are calculated during post-processing.
      */
-    public function process(array $rows, array $normalizedMetrics): ResultCollection
+    public function process(array $rows, array $normalizedMetrics, bool $forceSoftwareComputation = false): ResultCollection
     {
         // Split metrics by computation strategy
         $split = $this->dependencyResolver->splitByComputationStrategy($normalizedMetrics);
+
+        if ($forceSoftwareComputation) {
+            [$split['database'], $promoted] = $this->promoteDatabaseComputedMetrics($split['database']);
+            $split['software'] = array_merge($split['software'], $promoted);
+        }
+
+        if (! empty($rows)) {
+            [$split['database'], $missingColumns] = $this->promoteMissingComputedMetrics($split['database'], $rows);
+            $split['software'] = array_merge($split['software'], $missingColumns);
+        }
 
         // If no software-computed metrics, just normalize and return
         if (empty($split['software'])) {
@@ -67,11 +80,13 @@ class PostProcessor
                     $dependencies = $metricArray['dependencies'];
 
                     // Evaluate expression using current row data
-                    $processedRow[$key] = $this->evaluateExpression(
+                    $value = $this->evaluateExpression(
                         $expression,
                         $dependencies,
                         $processedRow
                     );
+
+                    $processedRow[$key] = $this->normalizeComputedMetricValue($value, $expression);
                 }
             }
         }
@@ -247,12 +262,23 @@ class PostProcessor
      */
     protected function normalizeRowMetrics(array $row, array $normalizedMetrics): array
     {
-        $metricKeys = array_map(fn ($m) => $m['key'], $normalizedMetrics);
+        foreach ($normalizedMetrics as $metricData) {
+            $key = $metricData['key'];
 
-        foreach ($metricKeys as $key) {
-            if (array_key_exists($key, $row)) {
-                $row[$key] = $this->normalizeNumericValue($row[$key]);
+            if (! array_key_exists($key, $row)) {
+                continue;
             }
+
+            // Check if this is a computed metric that likely produces decimals
+            $metricArray = $metricData['metric']->toArray();
+            $isComputed = $metricArray['computed'] ?? false;
+            $expression = $metricArray['expression'] ?? '';
+
+            // Only preserve float for computed metrics that involve division
+            // (which is likely to produce decimal results)
+            $hasDivision = $isComputed && str_contains($expression, '/');
+
+            $row[$key] = $this->normalizeNumericValue($row[$key], $hasDivision);
         }
 
         return $row;
@@ -271,8 +297,10 @@ class PostProcessor
 
     /**
      * Normalize a numeric value from database to proper PHP type.
+     *
+     * @param  bool  $preserveFloat  If true, preserve float type even for whole numbers
      */
-    protected function normalizeNumericValue(mixed $value): mixed
+    protected function normalizeNumericValue(mixed $value, bool $preserveFloat = false): mixed
     {
         if (! is_numeric($value)) {
             return $value;
@@ -280,6 +308,77 @@ class PostProcessor
 
         $numeric = (float) $value;
 
+        // Preserve float type for computed metrics or metrics with decimal formatting
+        if ($preserveFloat) {
+            return $numeric;
+        }
+
         return fmod($numeric, 1.0) === 0.0 ? (int) round($numeric) : $numeric;
+    }
+
+    protected function normalizeComputedMetricValue(mixed $value, string $expression): mixed
+    {
+        $hasDivision = str_contains($expression, '/');
+
+        return $this->normalizeNumericValue($value, $hasDivision);
+    }
+
+    /**
+     * Promote computed metrics from the database bucket so they can be evaluated in software.
+     *
+     * @param  array  $databaseMetrics
+     * @return array{0: array, 1: array}
+     */
+    protected function promoteDatabaseComputedMetrics(array $databaseMetrics): array
+    {
+        $remaining = [];
+        $promoted = [];
+
+        foreach ($databaseMetrics as $metricData) {
+            $metricArray = $metricData['metric']->toArray();
+
+            if ($metricArray['computed'] ?? false) {
+                $promoted[] = $metricData;
+                continue;
+            }
+
+            $remaining[] = $metricData;
+        }
+
+        return [$remaining, $promoted];
+    }
+
+    /**
+     * Promote computed metrics whose columns are missing from the row data.
+     *
+     * @param  array  $databaseMetrics
+     * @param  array  $rows
+     * @return array{0: array, 1: array}
+     */
+    protected function promoteMissingComputedMetrics(array $databaseMetrics, array $rows): array
+    {
+        if (empty($databaseMetrics) || empty($rows)) {
+            return [$databaseMetrics, []];
+        }
+
+        $firstRow = (array) ($rows[0] ?? []);
+
+        $remaining = [];
+        $promoted = [];
+
+        foreach ($databaseMetrics as $metricData) {
+            $metricArray = $metricData['metric']->toArray();
+            $key = $metricData['key'];
+
+            if (($metricArray['computed'] ?? false) && ! array_key_exists($key, $firstRow)) {
+                $promoted[] = $metricData;
+
+                continue;
+            }
+
+            $remaining[] = $metricData;
+        }
+
+        return [$remaining, $promoted];
     }
 }

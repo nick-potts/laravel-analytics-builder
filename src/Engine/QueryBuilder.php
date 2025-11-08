@@ -13,6 +13,7 @@ use NickPotts\Slice\Engine\Plans\SoftwareJoinTablePlan;
 use NickPotts\Slice\Schemas\Dimension;
 use NickPotts\Slice\Schemas\TimeDimension;
 use NickPotts\Slice\Tables\BelongsTo;
+use NickPotts\Slice\Tables\CrossJoin;
 use NickPotts\Slice\Tables\HasMany;
 
 class QueryBuilder
@@ -50,6 +51,19 @@ class QueryBuilder
 
         // Split metrics by computation strategy
         $split = $this->dependencies->splitByComputationStrategy($normalizedMetrics);
+
+        // If database CTEs aren't supported, treat database computed metrics as software
+        if (! $this->driver->supportsCTEs() && $this->hasComputedMetrics($split['database'])) {
+            // Move database computed metrics to software split
+            foreach ($split['database'] as $key => $metricData) {
+                $metricArray = $metricData['metric']->toArray();
+                if ($metricArray['computed'] ?? false) {
+                    $split['software'][] = $metricData;
+                    unset($split['database'][$key]);
+                }
+            }
+            $split['database'] = array_values($split['database']); // Re-index
+        }
 
         // If we have cross-driver computed metrics, use software joins
         $needsSoftwareJoin = count($tables) > 1 && ! $this->driver->supportsDatabaseJoins();
@@ -110,13 +124,15 @@ class QueryBuilder
         $primaryTable = $tables[0];
         $primaryTableName = $primaryTable->table();
 
+        // Pass dimensions to join resolver for dimension-based joins
+        $this->joinResolver->setQueryDimensions($dimensions);
         $joinGraph = $this->joinResolver->buildJoinGraph($tables);
 
         if (empty($joinGraph)) {
             throw new \RuntimeException('Unable to determine join path for software join fallback.');
         }
 
-        [$relations, $tableJoinColumns, $joinAliasNames] = $this->buildSoftwareJoinRelations($joinGraph);
+        [$relations, $tableJoinColumns, $joinAliasNames] = $this->buildSoftwareJoinRelations($joinGraph, $dimensions);
         $joinAliasNames = array_values(array_unique($joinAliasNames));
 
         $dimensionOrder = $this->collectDimensionAliases($tables, $dimensions);
@@ -417,7 +433,7 @@ class QueryBuilder
      *     array<int, string>
      * }
      */
-    protected function buildSoftwareJoinRelations(array $joinGraph): array
+    protected function buildSoftwareJoinRelations(array $joinGraph, array $dimensions = []): array
     {
         $relations = [];
         $tableJoinColumns = [];
@@ -426,6 +442,21 @@ class QueryBuilder
         foreach ($joinGraph as $index => $join) {
             $relation = $join['relation'];
             $relationKey = $join['from'].'->'.$join['to'];
+
+            // Handle dimension-based joins
+            if ($relation === 'dimension_join') {
+                // For dimension joins, we join on dimension aliases, not FK columns
+                // So we don't add to $tableJoinColumns - dimensions are already selected
+                $relations[] = new SoftwareJoinRelation(
+                    $relationKey,
+                    $join['from'],
+                    $join['to'],
+                    'dimension_join',
+                    null, // No FK alias needed
+                    null  // No FK alias needed
+                );
+                continue;
+            }
 
             if ($relation instanceof BelongsTo) {
                 $fromAlias = $this->joinAlias($relationKey, $join['from'], $relation->foreignKey(), (int) $index);
@@ -475,6 +506,35 @@ class QueryBuilder
                     $join['from'],
                     $join['to'],
                     'has_many',
+                    $fromAlias,
+                    $toAlias,
+                );
+
+                $joinAliasNames[] = $fromAlias;
+                $joinAliasNames[] = $toAlias;
+
+                continue;
+            }
+
+            if ($relation instanceof CrossJoin) {
+                $fromAlias = $this->joinAlias($relationKey, $join['from'], $relation->leftKey(), (int) $index);
+                $toAlias = $this->joinAlias($relationKey, $join['to'], $relation->rightKey(), (int) $index);
+
+                $tableJoinColumns[$join['from']][] = [
+                    'alias' => $fromAlias,
+                    'column' => $relation->leftKey(),
+                ];
+
+                $tableJoinColumns[$join['to']][] = [
+                    'alias' => $toAlias,
+                    'column' => $relation->rightKey(),
+                ];
+
+                $relations[] = new SoftwareJoinRelation(
+                    $relationKey,
+                    $join['from'],
+                    $join['to'],
+                    'cross_join',
                     $fromAlias,
                     $toAlias,
                 );
@@ -617,6 +677,24 @@ class QueryBuilder
                 $columnAlias,
                 $translated
             );
+        }
+
+        // SQLite specific: Force float division and float result type
+        if ($this->driver->grammar() instanceof \NickPotts\Slice\Engine\Grammar\SqliteGrammar) {
+            // Handle different division patterns to force float division
+
+            // Case 1: ) / → ) * 1.0 / (parenthesized expressions)
+            $translated = preg_replace('/\)\s*\//', ') * 1.0 /', $translated);
+
+            // Case 2: identifier / → (identifier * 1.0) / (simple identifiers)
+            $translated = preg_replace('/\b([a-z_][a-z0-9_]*)\s*\//', '($1 * 1.0) /', $translated);
+
+            // Case 3: number / → (number * 1.0) / (numeric literals)
+            $translated = preg_replace('/\b(\d+(?:\.\d+)?)\s*\//', '($1 * 1.0) /', $translated);
+
+            // Ensure the final result is a REAL type (float) by adding 0.0
+            // This forces SQLite and PDO to treat the result as float, not integer
+            $translated = "({$translated}) + 0.0";
         }
 
         return $translated;

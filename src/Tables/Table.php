@@ -72,4 +72,12 @@ abstract class Table
     {
         return new BelongsToMany($table, $pivotTable, $foreignKey, $relatedKey);
     }
+
+    /**
+     * Define a cross join relationship (for tables without FK relationships).
+     */
+    protected function crossJoin(string $table, string $leftKey, string $rightKey, ?string $condition = null): CrossJoin
+    {
+        return new CrossJoin($table, $leftKey, $rightKey, $condition);
+    }
 }

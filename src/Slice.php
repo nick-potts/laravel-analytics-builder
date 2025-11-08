@@ -10,6 +10,7 @@ use NickPotts\Slice\Engine\Drivers\LaravelQueryDriver;
 use NickPotts\Slice\Engine\PostProcessor;
 use NickPotts\Slice\Engine\QueryBuilder;
 use NickPotts\Slice\Engine\QueryExecutor;
+use NickPotts\Slice\Engine\Plans\SoftwareJoinQueryPlan;
 use NickPotts\Slice\Engine\ResultCollection;
 use NickPotts\Slice\Schemas\Dimension;
 use NickPotts\Slice\Support\Registry;
@@ -97,7 +98,9 @@ class Slice
         $plan = $this->builder->build($normalizedMetrics, $this->selectedDimensions);
         $rows = $this->executor->run($plan);
 
-        return $this->postProcessor->process($rows, $normalizedMetrics);
+        $forceSoftwareComputed = $plan instanceof SoftwareJoinQueryPlan;
+
+        return $this->postProcessor->process($rows, $normalizedMetrics, $forceSoftwareComputed);
     }
 
     /**

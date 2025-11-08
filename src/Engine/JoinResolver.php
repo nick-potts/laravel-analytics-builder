@@ -3,12 +3,23 @@
 namespace NickPotts\Slice\Engine;
 
 use NickPotts\Slice\Contracts\QueryAdapter;
+use NickPotts\Slice\Schemas\Dimension;
 use NickPotts\Slice\Tables\BelongsTo;
+use NickPotts\Slice\Tables\CrossJoin;
 use NickPotts\Slice\Tables\HasMany;
 use NickPotts\Slice\Tables\Table;
 
 class JoinResolver
 {
+    protected array $queryDimensions = [];
+
+    /**
+     * Set the dimensions from the current query (needed for dimension-based joins).
+     */
+    public function setQueryDimensions(array $dimensions): void
+    {
+        $this->queryDimensions = $dimensions;
+    }
     /**
      * Find the join path between two tables using BFS.
      *
@@ -28,7 +39,13 @@ class JoinResolver
         while (! empty($queue)) {
             [$currentTable, $path] = array_shift($queue);
 
-            foreach ($currentTable->relations() as $relationName => $relation) {
+            // Check both regular relations and cross joins
+            $allRelations = array_merge(
+                $currentTable->relations(),
+                $currentTable->crossJoins()
+            );
+
+            foreach ($allRelations as $relationName => $relation) {
                 $relatedTableClass = $relation->table();
                 $relatedTable = new $relatedTableClass;
                 $relatedTableName = $relatedTable->table();
@@ -81,6 +98,13 @@ class JoinResolver
                     '=',
                     "{$toTable}.{$relation->foreignKey()}"
                 );
+            } elseif ($relation instanceof CrossJoin) {
+                $query->join(
+                    $toTable,
+                    "{$fromTable}.{$relation->leftKey()}",
+                    '=',
+                    "{$toTable}.{$relation->rightKey()}"
+                );
             }
             // Add support for other relation types as needed
         }
@@ -106,6 +130,7 @@ class JoinResolver
         // Connect remaining tables to the graph
         for ($i = 1; $i < count($tables); $i++) {
             $targetTable = $tables[$i];
+            $connected = false;
 
             // Try to find a path from any connected table to the target
             foreach ($tables as $sourceTable) {
@@ -122,12 +147,56 @@ class JoinResolver
                         }
 
                         $connectedTables[] = $targetTable->table();
+                        $connected = true;
                         break;
+                    }
+                }
+            }
+
+            // If no FK path found, check for dimension-based join
+            if (! $connected && ! empty($this->queryDimensions)) {
+                foreach ($tables as $sourceTable) {
+                    if (in_array($sourceTable->table(), $connectedTables) && $sourceTable->table() !== $targetTable->table()) {
+                        // Check if these tables share dimensions
+                        if ($this->canJoinOnDimensions($sourceTable, $targetTable)) {
+                            $joinKey = $sourceTable->table().'->'.$targetTable->table();
+                            $allJoins[$joinKey] = [
+                                'from' => $sourceTable->table(),
+                                'to' => $targetTable->table(),
+                                'relation' => 'dimension_join', // Special marker
+                            ];
+                            $connectedTables[] = $targetTable->table();
+                            $connected = true;
+                            break;
+                        }
                     }
                 }
             }
         }
 
         return array_values($allJoins);
+    }
+
+    /**
+     * Check if two tables can be joined based on shared dimensions in the query.
+     */
+    protected function canJoinOnDimensions(Table $table1, Table $table2): bool
+    {
+        $table1Dimensions = array_keys($table1->dimensions());
+        $table2Dimensions = array_keys($table2->dimensions());
+
+        // Check if any query dimension is supported by both tables
+        foreach ($this->queryDimensions as $queryDimension) {
+            $dimensionClass = get_class($queryDimension);
+
+            $table1Supports = in_array($dimensionClass, $table1Dimensions);
+            $table2Supports = in_array($dimensionClass, $table2Dimensions);
+
+            if ($table1Supports && $table2Supports) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

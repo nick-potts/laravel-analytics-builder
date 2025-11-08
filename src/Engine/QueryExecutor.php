@@ -60,6 +60,7 @@ class QueryExecutor
 
         $joinedTables = [$primaryTable => true];
         $pendingRelations = $plan->relations();
+        $dimensionAliases = $plan->dimensionOrder(); // Get dimension aliases for dimension joins
 
         while (! empty($pendingRelations)) {
             $progress = false;
@@ -76,20 +77,33 @@ class QueryExecutor
                 }
 
                 if ($fromJoined xor $toJoined) {
+                    // For dimension joins, use dimension aliases instead of FK aliases
+                    if ($relation->type() === 'dimension_join') {
+                        $fromAlias = $this->findDimensionAlias($dimensionAliases, $relation->from());
+                        $toAlias = $this->findDimensionAlias($dimensionAliases, $relation->to());
+                    } else {
+                        $fromAlias = $relation->fromAlias();
+                        $toAlias = $relation->toAlias();
+                    }
+
+                    $preserveLeftRows = $relation->type() === 'dimension_join';
+
                     if ($fromJoined) {
                         $joinedRows = $this->joinRows(
                             $joinedRows,
                             $tableResults[$relation->to()] ?? [],
-                            $relation->fromAlias(),
-                            $relation->toAlias()
+                            $fromAlias,
+                            $toAlias,
+                            $preserveLeftRows
                         );
                         $joinedTables[$relation->to()] = true;
                     } else {
                         $joinedRows = $this->joinRows(
                             $joinedRows,
                             $tableResults[$relation->from()] ?? [],
-                            $relation->toAlias(),
-                            $relation->fromAlias()
+                            $toAlias,
+                            $fromAlias,
+                            $preserveLeftRows
                         );
                         $joinedTables[$relation->from()] = true;
                     }
@@ -108,14 +122,39 @@ class QueryExecutor
     }
 
     /**
+     * Find the dimension alias for a given table.
+     * Returns the first dimension alias that starts with the table name.
+     */
+    protected function findDimensionAlias(array $dimensionAliases, string $tableName): ?string
+    {
+        foreach ($dimensionAliases as $alias) {
+            if (str_starts_with($alias, $tableName.'_')) {
+                return $alias;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $leftRows
      * @param  array<int, array<string, mixed>>  $rightRows
      * @return array<int, array<string, mixed>>
      */
-    protected function joinRows(array $leftRows, array $rightRows, string $leftAlias, string $rightAlias): array
+    protected function joinRows(
+        array $leftRows,
+        array $rightRows,
+        string $leftAlias,
+        string $rightAlias,
+        bool $preserveUnmatchedLeftRows = false
+    ): array
     {
-        if (empty($leftRows) || empty($rightRows)) {
+        if (empty($leftRows)) {
             return [];
+        }
+
+        if (empty($rightRows)) {
+            return $preserveUnmatchedLeftRows ? $leftRows : [];
         }
 
         $index = [];
@@ -137,6 +176,10 @@ class QueryExecutor
             $key = $row[$leftAlias] ?? null;
 
             if ($key === null || ! isset($index[$key])) {
+                if ($preserveUnmatchedLeftRows) {
+                    $joined[] = $row;
+                }
+
                 continue;
             }
 

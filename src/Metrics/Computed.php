@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Support\Traits\Macroable;
 use NickPotts\Slice\Contracts\Metric;
+use NickPotts\Slice\Contracts\MetricContract;
 use NickPotts\Slice\Tables\Table;
 
 class Computed implements Metric
@@ -60,16 +61,15 @@ class Computed implements Metric
     /**
      * Specify dependencies for this computed metric.
      */
-    public function dependsOn(MetricContract|string ...$metrics): static
+    public function dependsOn(Metric|MetricContract|string ...$metrics): static
     {
         foreach ($metrics as $metric) {
-            if ($metric instanceof MetricContract) {
-                // If it's an enum case, get its key
-                $table = $metric->table();
+            if ($metric instanceof Metric) {
+                $this->dependencies[] = $metric->key();
+            } elseif ($metric instanceof MetricContract) {
                 $metricDef = $metric->get();
-                $this->dependencies[] = $table->table().'.'.$metricDef->name();
+                $this->dependencies[] = $metricDef->key();
             } else {
-                // It's a string key like 'orders.revenue'
                 $this->dependencies[] = $metric;
             }
         }
@@ -134,7 +134,7 @@ class Computed implements Metric
      */
     public function key(): string
     {
-        return $this->getLabel() ?: 'computed_'.md5($this->expression);
+        return 'computed_'.md5($this->expression);
     }
 
     /**

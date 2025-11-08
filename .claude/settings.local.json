@@ -5,7 +5,8 @@
       "Bash(cat:*)",
       "mcp__jetbrains__list_directory_tree",
       "Bash(vendor/bin/phpstan analyze:*)",
-      "Bash(vendor/bin/pest:*)"
+      "Bash(vendor/bin/pest:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
