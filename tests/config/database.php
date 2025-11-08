@@ -31,11 +31,11 @@ return [
     ],
     'pgsql' => [
         'driver' => 'pgsql',
-        'host' => 'pgsql',
+        'host' => 'localhost',
         'port' => '5432',
         'database' => 'test',
         'username' => 'postgres',
-        'password' => 'password',
+        'password' => '',
         'charset' => 'utf8',
         'prefix' => '',
         'search_path' => 'public',
