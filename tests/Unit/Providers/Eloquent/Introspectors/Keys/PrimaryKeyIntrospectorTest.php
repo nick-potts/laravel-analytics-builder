@@ -1,6 +1,6 @@
 <?php
 
-use NickPotts\Slice\Providers\Eloquent\Introspectors\PrimaryKeyIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Keys\PrimaryKeyIntrospector;
 use Workbench\App\Models\Order;
 
 it('extracts primary key from model', function () {

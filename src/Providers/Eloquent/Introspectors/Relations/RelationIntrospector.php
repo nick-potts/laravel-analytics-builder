@@ -1,6 +1,6 @@
 <?php
 
-namespace NickPotts\Slice\Providers\Eloquent\Introspectors;
+namespace NickPotts\Slice\Providers\Eloquent\Introspectors\Relations;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

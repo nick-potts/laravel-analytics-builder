@@ -1,6 +1,6 @@
 <?php
 
-use NickPotts\Slice\Providers\Eloquent\Introspectors\RelationIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Relations\RelationIntrospector;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use Workbench\App\Models\Order;
 use Workbench\App\Models\OrderItem;
@@ -35,6 +35,7 @@ it('returns empty graph for model without relations', function () {
 
     $graph = $introspector->introspect(\Workbench\App\Models\Product::class, $reflection);
 
-    // Product may or may not have relations depending on the model definition
-    expect($graph->count())->toBeGreaterThanOrEqual(0);
+    // Product model has no defined relations
+    expect($graph->count())->toBe(0);
+    expect($graph->all())->toBeEmpty();
 });

@@ -3,9 +3,9 @@
 namespace NickPotts\Slice\Providers\Eloquent;
 
 use Illuminate\Database\Eloquent\Model;
-use NickPotts\Slice\Providers\Eloquent\Introspectors\DimensionIntrospector;
-use NickPotts\Slice\Providers\Eloquent\Introspectors\PrimaryKeyIntrospector;
-use NickPotts\Slice\Providers\Eloquent\Introspectors\RelationIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\DimensionIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Keys\PrimaryKeyIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Relations\RelationIntrospector;
 use NickPotts\Slice\Schemas\ModelMetadata;
 
 /**

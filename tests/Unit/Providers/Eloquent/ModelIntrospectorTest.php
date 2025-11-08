@@ -1,8 +1,8 @@
 <?php
 
-use NickPotts\Slice\Providers\Eloquent\Introspectors\DimensionIntrospector;
-use NickPotts\Slice\Providers\Eloquent\Introspectors\PrimaryKeyIntrospector;
-use NickPotts\Slice\Providers\Eloquent\Introspectors\RelationIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\DimensionIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Keys\PrimaryKeyIntrospector;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Relations\RelationIntrospector;
 use NickPotts\Slice\Providers\Eloquent\ModelIntrospector;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use Workbench\App\Models\Order;

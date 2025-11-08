@@ -1,6 +1,6 @@
 <?php
 
-namespace NickPotts\Slice\Providers\Eloquent\Introspectors;
+namespace NickPotts\Slice\Providers\Eloquent\Introspectors\Keys;
 
 use Illuminate\Database\Eloquent\Model;
 use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;

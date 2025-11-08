@@ -41,9 +41,9 @@ class EloquentSchemaProvider implements CachableSchemaProvider
     {
         $this->scanner = new ModelScanner();
         $this->introspector = new ModelIntrospector(
-            new Introspectors\PrimaryKeyIntrospector(),
-            new Introspectors\RelationIntrospector(),
-            new Introspectors\DimensionIntrospector(),
+            new Introspectors\Keys\PrimaryKeyIntrospector(),
+            new Introspectors\Relations\RelationIntrospector(),
+            new Introspectors\Dimensions\DimensionIntrospector(),
         );
 
         if ($directories === null) {
