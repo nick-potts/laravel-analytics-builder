@@ -6,7 +6,10 @@
       "mcp__jetbrains__list_directory_tree",
       "Bash(vendor/bin/phpstan analyze:*)",
       "Bash(vendor/bin/pest:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "mcp__jetbrains__get_file_text_by_path",
+      "mcp__jetbrains__find_files_by_glob",
+      "mcp__jetbrains__create_new_file"
     ],
     "deny": [],
     "ask": []

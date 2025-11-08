@@ -43,7 +43,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "NickPotts\\Slice\\Tests\\": "tests/",
+            "Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/",
             "Workbench\\Database\\Factories\\": "workbench/database/factories/",
             "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"

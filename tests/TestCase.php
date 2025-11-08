@@ -30,7 +30,8 @@ class TestCase extends Orchestra
     protected function tearDown(): void
     {
         // Clean disconnect between tests
-        DB::connection()->disconnect();
+        // TODO: verify not needed
+        //        DB::connection()->disconnect();
 
         parent::tearDown();
     }
