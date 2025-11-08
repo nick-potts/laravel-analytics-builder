@@ -353,6 +353,31 @@ class QueryBuilder
     }
 
     /**
+     * Add ORDER BY clauses for CTE queries using dimension aliases.
+     * This is used when querying from CTEs where columns are already aliased.
+     *
+     * @param  array<Dimension>  $dimensions
+     */
+    protected function addOrderByForCTEQuery(QueryAdapter $query, array $dimensions, array $tables): void
+    {
+        foreach ($dimensions as $dimension) {
+            $resolved = $this->dimensionResolver->resolveDimensionForTables($tables, $dimension);
+
+            foreach ($resolved as $tableName => $resolvedData) {
+                // Use the same alias format as created in addDimensionSelects
+                if ($dimension instanceof TimeDimension) {
+                    $granularity = $dimension->getGranularity();
+                    $alias = "{$tableName}_{$dimension->name()}_{$granularity}";
+                } else {
+                    $alias = "{$tableName}_{$dimension->name()}";
+                }
+
+                $query->orderBy($alias);
+            }
+        }
+    }
+
+    /**
      * @param  array<int, \NickPotts\Slice\Tables\Table>  $tables
      * @param  array<Dimension>  $dimensions
      * @return array<int, string>
@@ -567,6 +592,11 @@ class QueryBuilder
         $query->from($previousCTE);
         $query->select('*');
 
+        // Apply ORDER BY to the final query (not in CTEs for SQL Server compatibility)
+        if (! empty($dimensions)) {
+            $this->addOrderByForCTEQuery($query, $dimensions, $tables);
+        }
+
         return new DatabaseQueryPlan($query);
     }
 
@@ -592,7 +622,9 @@ class QueryBuilder
             $this->addDimensionSelects($query, $dimensions, $tables);
             $this->addGroupBy($query, $dimensions, $tables);
             $this->addDimensionFilters($query, $dimensions, $tables);
-            $this->addOrderBy($query, $dimensions, $tables);
+            // NOTE: ORDER BY is not added here for SQL Server compatibility
+            // CTEs cannot have ORDER BY unless TOP/OFFSET is also specified
+            // ORDER BY is applied to the final SELECT instead
         }
 
         return $query;
