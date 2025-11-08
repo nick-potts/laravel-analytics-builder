@@ -1,13 +1,15 @@
 <?php
 
 use NickPotts\Slice\Providers\Eloquent\ModelScanner;
-use Workbench\App\Models\Order;
 use Workbench\App\Models\Customer;
+use Workbench\App\Models\Order;
+
+use function Orchestra\Testbench\workbench_path;
 
 it('scans directory for eloquent models', function () {
-    $scanner = new ModelScanner();
+    $scanner = new ModelScanner;
     $models = $scanner->scan(
-        base_path('workbench/app/Models'),
+        workbench_path('app/Models'),
         'Workbench\\App\\Models'
     );
 
@@ -17,16 +19,16 @@ it('scans directory for eloquent models', function () {
 });
 
 it('returns empty array for nonexistent directory', function () {
-    $scanner = new ModelScanner();
+    $scanner = new ModelScanner;
     $models = $scanner->scan('/nonexistent/path', 'Some\\Namespace');
 
     expect($models)->toBeEmpty();
 });
 
 it('returns only eloquent models', function () {
-    $scanner = new ModelScanner();
+    $scanner = new ModelScanner;
     $models = $scanner->scan(
-        base_path('workbench/app/Models'),
+        workbench_path('app/Models'),
         'Workbench\\App\\Models'
     );
 

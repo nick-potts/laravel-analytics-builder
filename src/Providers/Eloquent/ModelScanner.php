@@ -20,13 +20,18 @@ class ModelScanner
      */
     public function scan(string $directory, string $baseNamespace): array
     {
-        if (!is_dir($directory)) {
+        $baseDirectory = $this->normalizeDirectory($directory);
+
+        if ($baseDirectory === null) {
             return [];
         }
 
         $models = [];
         $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($directory)
+            new \RecursiveDirectoryIterator(
+                $baseDirectory,
+                \FilesystemIterator::SKIP_DOTS
+            )
         );
 
         foreach ($files as $file) {
@@ -34,7 +39,11 @@ class ModelScanner
                 continue;
             }
 
-            $className = $this->fileToClassName($file->getPathname(), $directory, $baseNamespace);
+            $className = $this->fileToClassName(
+                $file->getPathname(),
+                $baseDirectory,
+                $baseNamespace
+            );
 
             // Try to load the class via autoloader (composer PSR-4)
             if (!class_exists($className)) {
@@ -60,11 +69,30 @@ class ModelScanner
      */
     private function fileToClassName(string $filePath, string $baseDirectory, string $baseNamespace): string
     {
-        $relative = str_replace($baseDirectory, '', $filePath);
-        $relative = str_replace('.php', '', $relative);
-        $relative = trim($relative, '/\\');
-        $relative = str_replace('/', '\\', $relative);
+        $normalizedPath = realpath($filePath) ?: $filePath;
+        $normalizedBase = rtrim($baseDirectory, DIRECTORY_SEPARATOR);
+
+        if (str_starts_with($normalizedPath, $normalizedBase)) {
+            $relative = substr($normalizedPath, strlen($normalizedBase));
+        } else {
+            $relative = $normalizedPath;
+        }
+
+        $relative = ltrim($relative, DIRECTORY_SEPARATOR);
+        $relative = str_replace(['/', '\\'], '\\', $relative);
+        $relative = preg_replace('/\.php$/i', '', $relative);
 
         return rtrim($baseNamespace, '\\') . '\\' . $relative;
+    }
+
+    private function normalizeDirectory(string $directory): ?string
+    {
+        if (! is_dir($directory)) {
+            return null;
+        }
+
+        $real = realpath($directory);
+
+        return rtrim($real !== false ? $real : $directory, DIRECTORY_SEPARATOR);
     }
 }

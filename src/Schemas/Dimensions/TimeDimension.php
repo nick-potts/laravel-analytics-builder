@@ -70,6 +70,14 @@ class TimeDimension implements Dimension
     /**
      * Set the column precision (date vs timestamp).
      */
+    public function precision(string $precision): self
+    {
+        return $this->withPrecision($precision);
+    }
+
+    /**
+     * @deprecated Use precision() instead.
+     */
     public function withPrecision(string $precision): self
     {
         $this->precision = $precision;
