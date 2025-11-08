@@ -96,4 +96,14 @@ class LaravelQueryAdapter implements QueryAdapter
     {
         return method_exists($this->builder, 'withExpression');
     }
+
+    public function orderBy(string $column, string $direction = 'asc'): void
+    {
+        $this->builder->orderBy($column, $direction);
+    }
+
+    public function orderByRaw(string $expression): void
+    {
+        $this->builder->orderByRaw($expression);
+    }
 }

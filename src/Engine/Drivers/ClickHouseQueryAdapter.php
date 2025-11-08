@@ -20,6 +20,8 @@ class ClickHouseQueryAdapter implements QueryAdapter
 
     protected array $groupBys = [];
 
+    protected array $orderBys = [];
+
     protected array $ctes = [];
 
     protected ?string $fromTable = null;
@@ -66,6 +68,16 @@ class ClickHouseQueryAdapter implements QueryAdapter
     public function groupByRaw(string $expression): void
     {
         $this->groupBys[] = $expression;
+    }
+
+    public function orderBy(string $column, string $direction = 'asc'): void
+    {
+        $this->orderBys[] = "{$column} {$direction}";
+    }
+
+    public function orderByRaw(string $expression): void
+    {
+        $this->orderBys[] = $expression;
     }
 
     public function whereIn(string $column, array $values): void
@@ -178,6 +190,11 @@ class ClickHouseQueryAdapter implements QueryAdapter
         // GROUP BY
         if (! empty($this->groupBys)) {
             $parts[] = 'GROUP BY '.implode(', ', $this->groupBys);
+        }
+
+        // ORDER BY
+        if (! empty($this->orderBys)) {
+            $parts[] = 'ORDER BY '.implode(', ', $this->orderBys);
         }
 
         return implode(' ', $parts);

@@ -11,7 +11,15 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
+
+            // SingleStore requires unique keys to contain all shard key columns
+            $isSingleStore = Schema::getConnection()->getDriverName() === 'singlestore';
+            if ($isSingleStore) {
+                $table->string('email');
+            } else {
+                $table->string('email')->unique();
+            }
+
             $table->string('segment')->default('general');
             $table->timestamps();
         });

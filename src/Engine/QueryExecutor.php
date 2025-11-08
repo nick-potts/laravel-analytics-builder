@@ -331,6 +331,22 @@ class QueryExecutor
 
         unset($resultRow);
 
+        // Sort results by dimension order to match database query ordering
+        if (! empty($dimensionOrder)) {
+            usort($results, function ($a, $b) use ($dimensionOrder) {
+                foreach ($dimensionOrder as $alias) {
+                    $aVal = $a[$alias] ?? null;
+                    $bVal = $b[$alias] ?? null;
+
+                    if ($aVal !== $bVal) {
+                        return $aVal <=> $bVal;
+                    }
+                }
+
+                return 0;
+            });
+        }
+
         return $results;
     }
 
