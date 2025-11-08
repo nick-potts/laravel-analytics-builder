@@ -6,7 +6,7 @@ use Workbench\App\Models\Order;
 use Workbench\App\Models\OrderItem;
 
 it('detects belongs to relations', function () {
-    $introspector = new RelationIntrospector();
+    $introspector = new RelationIntrospector;
     $reflection = new ReflectionClass(OrderItem::class);
 
     $graph = $introspector->introspect(OrderItem::class, $reflection);
@@ -18,7 +18,7 @@ it('detects belongs to relations', function () {
 });
 
 it('detects has many relations', function () {
-    $introspector = new RelationIntrospector();
+    $introspector = new RelationIntrospector;
     $reflection = new ReflectionClass(Order::class);
 
     $graph = $introspector->introspect(Order::class, $reflection);
@@ -30,7 +30,7 @@ it('detects has many relations', function () {
 });
 
 it('returns empty graph for model without relations', function () {
-    $introspector = new RelationIntrospector();
+    $introspector = new RelationIntrospector;
     $reflection = new ReflectionClass(\Workbench\App\Models\Product::class);
 
     $graph = $introspector->introspect(\Workbench\App\Models\Product::class, $reflection);

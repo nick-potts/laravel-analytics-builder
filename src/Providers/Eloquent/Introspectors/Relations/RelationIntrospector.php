@@ -30,12 +30,12 @@ class RelationIntrospector
     {
         $relations = [];
         $file = $reflection->getFileName();
-        if (!$file) {
+        if (! $file) {
             return new RelationGraph($relations);
         }
 
         $fileContent = file_get_contents($file);
-        if (!$fileContent) {
+        if (! $fileContent) {
             return new RelationGraph($relations);
         }
 
@@ -44,7 +44,7 @@ class RelationIntrospector
                 continue;
             }
 
-            if (!$this->isRelationMethod($method)) {
+            if (! $this->isRelationMethod($method)) {
                 continue;
             }
 
@@ -78,7 +78,7 @@ class RelationIntrospector
     ): ?RelationDescriptor {
         $returnTypeName = $method->getReturnType()?->getName();
 
-        if (!$returnTypeName) {
+        if (! $returnTypeName) {
             return null;
         }
 
@@ -90,7 +90,7 @@ class RelationIntrospector
 
         // Extract related model from the relation call
         $relatedModel = $this->extractRelatedModelFromSource($methodSource, $modelNamespace);
-        if (!$relatedModel) {
+        if (! $relatedModel) {
             return null;
         }
 
@@ -101,7 +101,7 @@ class RelationIntrospector
                 type: RelationType::BelongsTo,
                 targetModel: $relatedModel,
                 keys: [
-                    'foreign' => $method->getName() . '_id',
+                    'foreign' => $method->getName().'_id',
                     'owner' => 'id',
                 ],
             ),
@@ -110,7 +110,7 @@ class RelationIntrospector
                 type: RelationType::HasMany,
                 targetModel: $relatedModel,
                 keys: [
-                    'foreign' => str_replace('_id', '', $method->getName()) . '_id',
+                    'foreign' => str_replace('_id', '', $method->getName()).'_id',
                     'local' => 'id',
                 ],
             ),
@@ -119,7 +119,7 @@ class RelationIntrospector
                 type: RelationType::HasOne,
                 targetModel: $relatedModel,
                 keys: [
-                    'foreign' => str_replace('_id', '', $method->getName()) . '_id',
+                    'foreign' => str_replace('_id', '', $method->getName()).'_id',
                     'local' => 'id',
                 ],
             ),
@@ -152,9 +152,9 @@ class RelationIntrospector
             $modelName = str_replace('::class', '', $modelName);
 
             // If it's a relative class name (no namespace separator), resolve it relative to the current namespace
-            if (!str_contains($modelName, '\\')) {
+            if (! str_contains($modelName, '\\')) {
                 // Model class defined in the same namespace
-                return $modelNamespace . '\\' . $modelName;
+                return $modelNamespace.'\\'.$modelName;
             }
 
             return $modelName;
@@ -186,7 +186,7 @@ class RelationIntrospector
             return false;
         }
 
-        if (!$returnType instanceof \ReflectionNamedType) {
+        if (! $returnType instanceof \ReflectionNamedType) {
             return false;
         }
 
