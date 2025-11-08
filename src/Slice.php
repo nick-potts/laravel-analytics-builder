@@ -3,7 +3,7 @@
 namespace NickPotts\Slice;
 
 use NickPotts\Slice\Contracts\Metric;
-use NickPotts\Slice\Contracts\MetricContract as MetricEnum;
+use NickPotts\Slice\Contracts\MetricEnum;
 use NickPotts\Slice\Contracts\QueryDriver;
 use NickPotts\Slice\Engine\DimensionResolver;
 use NickPotts\Slice\Engine\Drivers\LaravelQueryDriver;

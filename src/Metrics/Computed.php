@@ -30,6 +30,8 @@ class Computed implements Metric
 
     /**
      * Create a new computed metric.
+     *
+     * @return static
      */
     public static function make(string $expression): static
     {

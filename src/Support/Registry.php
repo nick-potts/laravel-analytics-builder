@@ -2,12 +2,12 @@
 
 namespace NickPotts\Slice\Support;
 
-use NickPotts\Slice\Contracts\MetricContract;
+use NickPotts\Slice\Contracts\MetricEnum;
 use NickPotts\Slice\Tables\Table;
 
 class Registry
 {
-    /** @var array<string, class-string<MetricContract>> */
+    /** @var array<string, class-string<MetricEnum&\UnitEnum>> */
     protected array $metricEnums = [];
 
     /** @var array<string, Table> */
@@ -22,11 +22,12 @@ class Registry
     /**
      * Register a metric enum class.
      *
-     * @param  class-string<MetricContract>  $enumClass
+     * @param  class-string<MetricEnum&\UnitEnum>  $enumClass
      */
     public function registerMetricEnum(string $enumClass): void
     {
         // Get the first case to extract table info
+        /** @var array<MetricEnum> $cases */
         $cases = $enumClass::cases();
         if (empty($cases)) {
             return;
@@ -46,9 +47,11 @@ class Registry
 
         // Register each metric
         foreach ($cases as $case) {
+            /** @var MetricEnum&\UnitEnum $case */
             $metric = $case->get();
-            $key = $tableName.'.'.$metric->name();
-            $this->metrics[$key] = array_merge($metric->toArray(), [
+            $metricArray = $metric->toArray();
+            $key = $tableName.'.'.$metricArray['name'];
+            $this->metrics[$key] = array_merge($metricArray, [
                 'enum_class' => $enumClass,
                 'enum_case' => $case->name,
                 'table' => $tableName,
@@ -61,7 +64,7 @@ class Registry
             $key = $tableName.'.'.$dimensionName;
             $this->dimensions[$key] = array_merge($dimension->toArray(), [
                 'table' => $tableName,
-                'dimension_class' => is_string($dimensionKey) ? $dimensionKey : get_class($dimension),
+                'dimension_class' => $dimensionKey,
             ]);
         }
     }
@@ -80,7 +83,7 @@ class Registry
             $key = $tableName.'.'.$dimensionName;
             $this->dimensions[$key] = array_merge($dimension->toArray(), [
                 'table' => $tableName,
-                'dimension_class' => is_string($dimensionKey) ? $dimensionKey : get_class($dimension),
+                'dimension_class' => $dimensionKey,
             ]);
         }
     }
@@ -88,7 +91,7 @@ class Registry
     /**
      * Get all registered metric enum classes.
      *
-     * @return array<string, class-string<MetricContract>>
+     * @return array<string, class-string<MetricEnum&\UnitEnum>>
      */
     public function metricEnums(): array
     {
@@ -152,7 +155,7 @@ class Registry
     /**
      * Lookup a metric enum case by string key.
      */
-    public function lookupMetric(string $key): ?MetricContract
+    public function lookupMetric(string $key): ?MetricEnum
     {
         $metricData = $this->getMetric($key);
         if (! $metricData) {

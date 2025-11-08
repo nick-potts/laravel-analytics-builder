@@ -62,7 +62,7 @@ class SliceServiceProvider extends PackageServiceProvider
         }
 
         foreach ($metricEnums as $enumClass) {
-            if (enum_exists($enumClass) && is_subclass_of($enumClass, \NickPotts\Slice\Contracts\MetricContract::class)) {
+            if (enum_exists($enumClass) && is_subclass_of($enumClass, \NickPotts\Slice\Contracts\MetricEnum::class)) {
                 $registry->registerMetricEnum($enumClass);
             }
         }

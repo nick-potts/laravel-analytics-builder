@@ -53,7 +53,10 @@ class LaravelQueryAdapter implements QueryAdapter
 
     public function getDriverName(): string
     {
-        return $this->builder->getConnection()->getDriverName();
+        /** @var \Illuminate\Database\Connection $connection */
+        $connection = $this->builder->getConnection();
+
+        return $connection->getDriverName();
     }
 
     public function getNative(): mixed

@@ -30,6 +30,8 @@ abstract class Aggregation implements DatabaseMetric
 
     /**
      * Create a new aggregation instance.
+     *
+     * @return static
      */
     public static function make(string $column): static
     {

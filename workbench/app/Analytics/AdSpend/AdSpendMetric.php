@@ -2,16 +2,14 @@
 
 namespace Workbench\App\Analytics\AdSpend;
 
-use NickPotts\Slice\Contracts\EnumMetric;
 use NickPotts\Slice\Contracts\Metric;
-use NickPotts\Slice\Contracts\MetricContract;
+use NickPotts\Slice\Contracts\MetricEnum;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Tables\Table;
 
-enum AdSpendMetric: string implements MetricContract
+enum AdSpendMetric: string implements MetricEnum
 {
-    use EnumMetric;
     case Spend = 'spend';
     case Impressions = 'impressions';
     case Clicks = 'clicks';

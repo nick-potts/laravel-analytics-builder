@@ -2,17 +2,15 @@
 
 namespace Workbench\App\Analytics\Orders;
 
-use NickPotts\Slice\Contracts\EnumMetric;
 use NickPotts\Slice\Contracts\Metric;
-use NickPotts\Slice\Contracts\MetricContract;
+use NickPotts\Slice\Contracts\MetricEnum;
 use NickPotts\Slice\Metrics\Computed;
 use NickPotts\Slice\Metrics\Count;
 use NickPotts\Slice\Metrics\Sum;
 use NickPotts\Slice\Tables\Table;
 
-enum OrdersMetric: string implements MetricContract
+enum OrdersMetric: string implements MetricEnum
 {
-    use EnumMetric;
     case Revenue = 'revenue';
     case Fees = 'fees';
     case OrderCount = 'order_count';
