@@ -1,14 +1,14 @@
-# Eloquent-First Architecture Refactor - Executive Summary
+# Schema Provider Architecture Refactor - Executive Summary
 
 **Project:** Slice Laravel Analytics Package
-**Status:** Design Complete - Ready for Implementation
+**Status:** Design Complete - Provider-Agnostic Architecture
 **Date:** 2025-11-08
 
 ---
 
 ## 🎯 Vision
 
-Transform Slice from requiring explicit Table class definitions to automatically introspecting Eloquent models, reducing boilerplate by **90%+** while maintaining **100% backward compatibility**.
+Transform Slice from requiring **explicit Table class definitions** to a **pluggable schema provider architecture** where developers can use `Sum::make('orders.total')` without defining Table classes, while supporting **any data source** (Eloquent, ClickHouse, APIs, etc.) through a unified plugin system.
 
 ---
 
@@ -20,65 +20,85 @@ Transform Slice from requiring explicit Table class definitions to automatically
 |--------|--------|-------|-------------|
 | **Lines to add metric** | 50+ lines | 1 line | **98% reduction** |
 | **Setup time** | 30-60 min | 0-5 min | **90% faster** |
-| **Concepts to learn** | 5 (Table, Enum, Metric, Relation, Dimension) | 1 (Direct aggregation) | **80% simpler** |
-| **Boilerplate code** | High (Table + Enum classes) | None (uses existing models) | **Eliminated** |
+| **Data source support** | Manual only | Pluggable (Eloquent, ClickHouse, APIs) | **Unlimited** |
+| **Boilerplate code** | High (Table + Enum classes) | None (provider-based) | **Eliminated** |
 
-### Code Comparison
+### Architectural Shift
 
-**Before (Current):**
-```php
-// Define OrdersTable class (~20 lines)
-// Define OrdersMetric enum (~15 lines)
-// Total: ~35 lines of boilerplate
-
-Slice::query()
-    ->metrics([OrdersMetric::Revenue])
-    ->get();
+**Before (Table-Centric):**
+```
+User → Manual Table Class → Registry → Query Engine
 ```
 
-**After (New):**
-```php
-// Zero additional code needed (uses existing Order model)
-
-Slice::query()
-    ->metrics([Sum::make('orders.total')->currency('USD')])
-    ->get();
+**After (Provider-Agnostic):**
 ```
-
-**Reduction: 35 lines → 1 line (97% less code)**
+User → SchemaProviderManager → [Manual, Eloquent, ClickHouse, Custom] → Query Engine
+```
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Core Architecture
+
+### Provider Plugin System
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    CURRENT (Table-Centric)              │
-│                                                         │
-│  User defines Table class → Manual relations/dimensions │
-│         ↓                                               │
-│  Metric Enum references Table → Slice query             │
-│         ↓                                               │
-│  High boilerplate, explicit configuration               │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│                    FUTURE (Eloquent-First)              │
-│                                                         │
-│  Eloquent Model (already exists) → Auto-introspection   │
-│         ↓                                               │
-│  Direct aggregation → Slice query                       │
-│         ↓                                               │
-│  Zero boilerplate, automatic configuration              │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│              SchemaProviderManager                  │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ Priority-based Resolution                    │  │
+│  │ 1. Explicit tables (highest)                 │  │
+│  │ 2. Override providers                        │  │
+│  │ 3. Registered providers (by priority)        │  │
+│  └──────────────────────────────────────────────┘  │
+│                       ↓                             │
+│  ┌─────────────┐ ┌──────────────┐ ┌──────────────┐│
+│  │   Manual    │ │   Eloquent   │ │  ClickHouse  ││
+│  │  Provider   │ │   Provider   │ │   Provider   ││
+│  │ (Priority:  │ │ (Priority:   │ │ (Priority:   ││
+│  │    100)     │ │    200)      │ │    300)      ││
+│  └─────────────┘ └──────────────┘ └──────────────┘│
+│         ↓                ↓                 ↓       │
+│   Table classes    Reflection      System tables  │
+└─────────────────────────────────────────────────────┘
 ```
 
-### New Components
+### Built-In Providers
 
-1. **TableContract** - Interface for both Manual and Eloquent tables
-2. **EloquentTable** - Auto-generates Table from Eloquent model via Reflection
-3. **ModelRegistry** - Scans and caches all Eloquent models
-4. **TableResolver** - Resolves `table.column` to TableContract with fallback
+1. **ManualTableProvider** - Existing Table classes (backward compatibility)
+2. **EloquentSchemaProvider** - Auto-introspect Laravel models (ships with package)
+3. **Custom Providers** - Community can build for any data source
+
+### Example: Third-Party Provider
+
+```php
+// ClickHouse provider (community package)
+class ClickHouseProvider implements SchemaProvider
+{
+    public function boot(SchemaCache $cache): void {
+        // Introspect ClickHouse system tables
+    }
+
+    public function provides(string $identifier): bool {
+        return $this->hasTable($identifier);
+    }
+
+    public function resolveMetricSource(string $reference): MetricSource {
+        [$table, $column] = explode('.', $reference);
+        return new MetricSource($this->tables[$table], $column);
+    }
+
+    // ... implement other methods
+}
+
+// Register in config
+return [
+    'providers' => [
+        \NickPotts\Slice\Providers\ManualTableProvider::class,
+        \NickPotts\Slice\Providers\EloquentSchemaProvider::class,
+        \Vendor\ClickHouse\ClickHouseProvider::class,
+    ],
+];
+```
 
 ---
 
@@ -86,79 +106,20 @@ Slice::query()
 
 ### 8-Week Roadmap
 
-| Phase | Duration | Goal | Deliverables |
-|-------|----------|------|--------------|
-| **1. Foundation** | Week 1-2 | Create abstractions | TableContract, EloquentTable, ModelRegistry, TableResolver |
-| **2. Integration** | Week 3 | Connect to engine | Update Aggregations, QueryBuilder, Registry |
-| **3. Relations** | Week 4 | Auto-join support | BelongsTo, HasMany, BelongsToMany introspection |
-| **4. Dimensions** | Week 5 | Auto-mapping | Cast-based dimension detection |
-| **5. Base Table** | Week 6 | Smart GROUP BY | Heuristic + explicit override |
-| **6. Optimization** | Week 7 | Production-ready | Caching, performance tuning |
-| **7. Documentation** | Week 8 | Migration guide | Docs, videos, migration path |
-
-### Key Milestones
-
-- ✅ **Week 2:** Direct aggregations work with Eloquent models
-- ✅ **Week 4:** Multi-table auto-joins functional
-- ✅ **Week 6:** Base table detection complete
-- ✅ **Week 7:** Production performance < 50ms overhead
-- ✅ **Week 8:** Documentation and migration guide ready
-
----
-
-## 🔑 Key Design Decisions
-
-### 1. Backward Compatibility Strategy
-
-**Decision:** TableContract interface + Priority-based resolution
-
-**Rationale:**
-- Existing Table classes implement TableContract
-- TableResolver checks Manual registry BEFORE Eloquent registry
-- Zero breaking changes guaranteed
-
-**Impact:** Seamless migration path - users can adopt incrementally
-
-### 2. Introspection Approach
-
-**Decision:** Reflection-based with caching
-
-**Rationale:**
-- Reflection provides complete model metadata
-- Cache to file in production for performance
-- Auto-scan in development for DX
-
-**Impact:**
-- Development: 400-600ms first scan (acceptable)
-- Production: < 20ms with cache (production-ready)
-
-### 3. Dimension Auto-Mapping
-
-**Decision:** Cast-based + configurable overrides
-
-**Rationale:**
-- `datetime`/`date` casts automatically become TimeDimensions
-- Column name patterns (e.g., `*_country`) can be configured
-- Explicit dimensions in queries always work
-
-**Impact:** 80% of dimensions auto-detected, 20% manually specified
-
-### 4. Base Table Resolution
-
-**Decision:** Heuristic-based with explicit override
-
-**Rationale:**
-- Single table: obvious base
-- Multiple tables with dimensions: first dimension's table
-- Ambiguous: throw clear error suggesting `->baseTable()`
-
-**Impact:** 90% of queries auto-detect, 10% need explicit specification
+| Phase | Duration | Goal | Key Deliverables |
+|-------|----------|------|------------------|
+| **1. Foundation** | Week 1-2 | Provider infrastructure | SchemaProvider contract, Manager, ManualTableProvider |
+| **2. Eloquent** | Week 3-4 | Auto-introspection | EloquentSchemaProvider with caching |
+| **3. Integration** | Week 5 | Query engine | Update QueryBuilder, JoinResolver, etc. |
+| **4. Base Table** | Week 6 | Smart GROUP BY | BaseTableResolver with heuristics |
+| **5. Relation Filters** | Week 7 | Multi-hop joins | RelationPathWalker |
+| **6. Documentation** | Week 8 | Migration guide | Docs, tutorials, provider author guide |
 
 ---
 
 ## 🎨 API Design
 
-### Simple Query
+### Simple Query (Eloquent)
 
 ```php
 // Before
@@ -170,35 +131,103 @@ Slice::query()->metrics([OrdersMetric::Revenue])->get();
 Slice::query()->metrics([Sum::make('orders.total')->currency('USD')])->get();
 ```
 
-### Multi-Table Query
+### Multiple Providers
 
 ```php
-// Before: Define 3 Table classes + 3 Enums (~100 lines total)
-Slice::query()
-    ->metrics([OrdersMetric::Revenue, OrderItemsMetric::Quantity])
-    ->get();
-
-// After: Zero additional code
+// Orders from Eloquent, Events from ClickHouse
 Slice::query()
     ->metrics([
-        Sum::make('orders.total')->currency('USD'),
-        Sum::make('order_items.quantity'),
+        Sum::make('orders.total')->currency('USD'),           // EloquentSchemaProvider
+        Sum::make('clickhouse:events.count'),                 // ClickHouseProvider
     ])
+    ->dimensions([TimeDimension::make('orders.created_at')->daily()])
     ->get();
 ```
 
-### Explicit Base Table
+### Provider Registration
 
 ```php
-// New feature for complex scenarios
-Slice::query()
-    ->baseTable('orders')
-    ->metrics([
-        Sum::make('orders.total'),
-        Sum::make('order_items.quantity'),
-    ])
-    ->get();
+// config/slice.php
+return [
+    'providers' => [
+        \NickPotts\Slice\Providers\ManualTableProvider::class,    // Priority: 100
+        \NickPotts\Slice\Providers\EloquentSchemaProvider::class, // Priority: 200
+        \Vendor\Custom\CustomProvider::class,                     // Priority: 300
+    ],
+];
+
+// Runtime registration
+app(SchemaProviderManager::class)->register(new ClickHouseProvider());
 ```
+
+---
+
+## 🔑 Key Design Decisions
+
+### 1. Provider Priority System
+
+**Decision:** Lower number = higher priority
+
+**Rationale:**
+- Manual tables always take precedence (backward compat)
+- Eloquent is default for models
+- Custom providers have lowest priority
+
+**Resolution order:**
+```
+1. Explicitly registered tables (highest)
+2. Override providers
+3. ManualTableProvider (priority: 100)
+4. EloquentSchemaProvider (priority: 200)
+5. Custom providers (priority: 300+)
+```
+
+### 2. Provider Interface
+
+**Decision:** Minimal, focused interface
+
+```php
+interface SchemaProvider {
+    public function boot(SchemaCache $cache): void;
+    public function tables(): iterable;
+    public function provides(string $identifier): bool;
+    public function resolveMetricSource(string $reference): MetricSource;
+    public function relations(string $table): RelationGraph;
+    public function dimensions(string $table): DimensionCatalog;
+    public function priority(): int;
+    public function name(): string;
+}
+```
+
+**Rationale:**
+- Simple to implement
+- Cacheable (optional CachableSchemaProvider)
+- Extensible without breaking changes
+
+### 3. Backward Compatibility
+
+**Decision:** Manual tables become first-class provider
+
+**Rationale:**
+- Not "legacy" - equal to Eloquent
+- Used for non-Eloquent sources
+- Highest priority (always wins)
+
+**Impact:** Zero breaking changes
+
+### 4. Caching Strategy
+
+**Decision:** Provider-specific caching via SchemaCache
+
+**Rationale:**
+- Different sources have different cache strategies
+- ClickHouse rarely changes (24h cache)
+- Eloquent changes frequently (file mtime)
+- APIs may need no cache (always fresh)
+
+**Performance:**
+- Uncached: 400-600ms (development)
+- Cached: < 20ms (production)
 
 ---
 
@@ -206,10 +235,10 @@ Slice::query()
 
 | Risk | Probability | Impact | Mitigation | Overall |
 |------|-------------|--------|------------|---------|
-| **Breaking changes** | Low | Critical | TableContract + tests | Medium |
+| **Breaking changes** | Low | Critical | ManualTableProvider + tests | Medium |
 | **Performance regression** | Low | High | Caching + benchmarks | Medium |
-| **Complex relations** | Medium | Medium | Incremental support | Medium |
-| **Cache invalidation** | Medium | Low | Auto-scan in dev | Low |
+| **Provider complexity** | Medium | Medium | Simple interface + examples | Medium |
+| **Adoption friction** | Medium | Low | Migration guide + videos | Low |
 
 ---
 
@@ -217,17 +246,17 @@ Slice::query()
 
 ### Quantitative
 
-1. **Code reduction:** 90%+ for new projects
+1. **Code reduction:** 90%+ for Eloquent users
 2. **Performance:** < 50ms production overhead (cached)
-3. **Test coverage:** 100% for new components
-4. **Backward compat:** 100% existing tests pass
+3. **Backward compat:** 100% existing tests pass
+4. **Community providers:** 5+ within 6 months
 
 ### Qualitative
 
 1. **Developer feedback:** "Much easier to use"
-2. **Adoption rate:** 50%+ of new projects use Eloquent-first approach
-3. **Issue reduction:** 30%+ fewer setup-related issues
-4. **Documentation quality:** Complete migration guide + videos
+2. **Adoption rate:** 50%+ of new projects use providers
+3. **Community engagement:** Active provider ecosystem
+4. **Documentation quality:** Complete provider author guide
 
 ---
 
@@ -236,22 +265,22 @@ Slice::query()
 ### Immediate (This Week)
 
 1. ✅ Review design documents with team
-2. ⏳ Create feature branch: `feature/eloquent-first`
+2. ⏳ Create feature branch: `feature/schema-providers`
 3. ⏳ Set up project board with Phase 1 tasks
-4. ⏳ Begin implementation: TableContract interface
+4. ⏳ Begin implementation: SchemaProvider contract
 
 ### Short Term (Month 1-2)
 
-1. ⏳ Complete Phase 1-4 (Foundation through Dimensions)
+1. ⏳ Complete Phase 1-3 (Foundation through Integration)
 2. ⏳ Beta release for community testing
-3. ⏳ Gather feedback and iterate
+3. ⏳ Build example ClickHouse provider
 
 ### Long Term (Month 3+)
 
-1. ⏳ Complete Phase 5-7 (Optimization + Documentation)
+1. ⏳ Complete Phase 4-6 (Base Table through Documentation)
 2. ⏳ Stable release v2.0
-3. ⏳ Community education (blog posts, videos)
-4. ⏳ Future enhancements (relation chains, etc.)
+3. ⏳ Community provider ecosystem
+4. ⏳ Conference talks and blog posts
 
 ---
 
@@ -259,87 +288,112 @@ Slice::query()
 
 This design phase produced comprehensive documentation:
 
-1. **ELOQUENT_FIRST_REFACTOR.md** (87 KB)
-   - Complete architecture design
+1. **SCHEMA_PROVIDER_REFACTOR.md** (95 KB)
+   - Complete provider-agnostic architecture
+   - SchemaProvider contract design
+   - Built-in providers (Manual, Eloquent)
+   - Example custom providers (ClickHouse, OpenAPI)
    - Implementation phases
    - API examples
    - Edge case handling
    - Testing strategy
-   - Performance analysis
-   - Migration guide
+   - Provider development guide
 
-2. **RELATION_CHAIN_WALKING.md** (18 KB)
+2. **planning/eloquent-schema-refactor.md** (User-provided)
+   - Original vision and requirements
+   - Mermaid diagrams
+   - Phase breakdown
+
+3. **RELATION_CHAIN_WALKING.md** (18 KB)
    - Future enhancement design
    - Multi-hop filter support
-   - Detailed implementation plan
 
-3. **Architecture Analysis Documents** (from exploration)
+4. **Architecture Analysis Documents** (from exploration)
    - ARCHITECTURE_SUMMARY.md
    - ARCHITECTURE_ANALYSIS.md
    - DIMENSIONS_ARCHITECTURE.md
    - JOIN_RESOLUTION_ANALYSIS.md
 
-**Total Documentation:** 150+ KB, 3000+ lines
+**Total Documentation:** 350+ KB, 4000+ lines
 
 ---
 
-## 💡 Key Insights from Analysis
+## 💡 Key Insights
 
 ### Strengths to Preserve
 
-1. **Clean separation of concerns** - Multi-stage pipeline (normalize → build → execute)
-2. **Polymorphic input** - Support for Enums, Metrics, and strings
-3. **Plan-based execution** - Strategy pattern for different query types
-4. **Multi-database support** - Grammar abstraction for 7+ databases
+1. **Provider abstraction** - Any data source can participate
+2. **Backward compatibility** - Manual tables are first-class, not legacy
+3. **Performance** - Caching at provider level
+4. **Extensibility** - Community can build providers without core changes
 
-### Weaknesses to Address
+### Provider Examples
 
-1. **High boilerplate** - Table classes required for every table
-2. **Manual configuration** - Relations and dimensions not auto-detected
-3. **No caching** - Resolvers run repeatedly on same data
-4. **Steep learning curve** - Must understand Table, Enum, Metric, Relation concepts
+| Provider | Use Case | Community Interest |
+|----------|----------|--------------------|
+| `EloquentSchemaProvider` | Laravel apps | ✅ Built-in |
+| `ClickHouseProvider` | OLAP analytics | 🔥 High |
+| `OpenAPIProvider` | REST APIs | 🔥 High |
+| `GraphQLProvider` | GraphQL APIs | 🔥 High |
+| `ConfigProvider` | Static YAML/JSON | ✅ Built-in |
+| `PostgresSchemaProvider` | Direct DB introspection | 🔥 High |
 
 ---
 
 ## 🎓 Technical Highlights
 
-### Reflection-Based Introspection
+### Provider Priority Resolution
 
 ```php
-$reflection = new ReflectionClass(Order::class);
-foreach ($reflection->getMethods() as $method) {
-    $returnType = $method->getReturnType();
-    if ($returnType === BelongsTo::class) {
-        // Auto-detect BelongsTo relation
+public function resolve(string $identifier): TableContract
+{
+    // 1. Explicit tables (highest priority)
+    if (isset($this->explicitTables[$identifier])) {
+        return $this->explicitTables[$identifier];
     }
+
+    // 2. Override providers
+    if (isset($this->overrides[$identifier])) {
+        return $this->resolveFromProvider($this->overrides[$identifier], $identifier);
+    }
+
+    // 3. Registered providers (by priority)
+    foreach ($this->providers as $provider) {
+        if ($provider->provides($identifier)) {
+            return $this->resolveFromProvider($provider, $identifier);
+        }
+    }
+
+    throw new TableNotFoundException("Table '{$identifier}' not found");
 }
 ```
 
-### Production Caching
-
-```bash
-# Deploy script
-php artisan slice:cache
-# Generates: storage/framework/cache/slice_models.php
-# Load time: < 10ms (vs 400ms uncached)
-```
-
-### Fallback Priority
+### Multi-Source Queries
 
 ```php
-public function resolveTable(string $tableName): TableContract {
-    // 1. Check manual registry (backward compat)
-    if ($manual = $this->manualRegistry->getTable($tableName)) {
-        return $manual;
-    }
+// Eloquent + ClickHouse + Manual in single query
+Slice::query()
+    ->metrics([
+        Sum::make('orders.total'),                    // Eloquent
+        Sum::make('clickhouse:events.count'),         // ClickHouse
+        Count::make('legacy_data.records'),           // Manual Table
+    ])
+    ->get();
+```
 
-    // 2. Check Eloquent registry
-    if ($eloquent = $this->modelRegistry->lookup($tableName)) {
-        return $eloquent;
-    }
+### Provider Caching
 
-    // 3. Error with helpful message
-    throw new InvalidArgumentException("Table '{$tableName}' not found");
+```php
+// EloquentSchemaProvider (file mtime-based)
+public function isCacheValid(): bool {
+    $cacheTime = $this->cache->timestamp();
+    return !$this->directoryModifiedAfter(app_path('Models'), $cacheTime);
+}
+
+// ClickHouseProvider (time-based)
+public function isCacheValid(): bool {
+    $cacheTime = $this->cache->timestamp();
+    return (now()->timestamp - $cacheTime) < 86400; // 24 hours
 }
 ```
 
@@ -349,19 +403,19 @@ public function resolveTable(string $tableName): TableContract {
 
 | Component | Complexity | Effort | Risk |
 |-----------|------------|--------|------|
-| TableContract + EloquentTable | High | 5 days | Medium |
-| ModelRegistry + Caching | Medium | 3 days | Low |
-| TableResolver | Low | 2 days | Low |
-| Integration with Engine | Medium | 3 days | Medium |
-| Relation Auto-Detection | High | 5 days | Medium |
-| Dimension Auto-Mapping | Medium | 3 days | Low |
-| Base Table Resolution | High | 5 days | High |
+| SchemaProvider contract | Medium | 2 days | Low |
+| SchemaProviderManager | High | 5 days | Medium |
+| ManualTableProvider | Low | 2 days | Low |
+| EloquentSchemaProvider | High | 7 days | Medium |
+| Query Engine Integration | Medium | 5 days | Medium |
+| BaseTableResolver | High | 5 days | High |
+| RelationPathWalker | High | 5 days | Medium |
 | Testing | High | 8 days | Low |
 | Documentation | Medium | 5 days | Low |
-| **Total** | **High** | **39 days (~8 weeks)** | **Medium** |
+| **Total** | **High** | **44 days (~9 weeks)** | **Medium** |
 
 **Team:** 1 senior developer
-**Timeline:** 8 weeks (with buffer)
+**Timeline:** 8-9 weeks (with buffer)
 **Budget:** Medium investment, very high ROI
 
 ---
@@ -371,13 +425,16 @@ public function resolveTable(string $tableName): TableContract {
 **PROCEED WITH IMPLEMENTATION**
 
 **Rationale:**
-1. Clear business value (90% code reduction)
+1. Clear business value (90% code reduction + unlimited extensibility)
 2. Zero breaking changes (backward compatible)
-3. Comprehensive design (150KB documentation)
+3. Comprehensive design (350KB documentation)
 4. Manageable risk (Medium overall)
-5. Strong developer demand (common pain point)
+5. Strong community potential (provider ecosystem)
+6. Future-proof architecture (pluggable, extensible)
 
 **Confidence Level:** High (9/10)
+
+**Key Differentiator:** Not just "Eloquent-first" but "**provider-agnostic**" - supports any data source through plugins, making Slice the universal analytics layer for Laravel.
 
 ---
 
@@ -390,8 +447,10 @@ public function resolveTable(string $tableName): TableContract {
 ## 📞 Questions & Feedback
 
 For questions about this design:
-1. Review ELOQUENT_FIRST_REFACTOR.md for detailed architecture
-2. Check RELATION_CHAIN_WALKING.md for future enhancements
-3. Consult architecture analysis documents for current state
+1. Review SCHEMA_PROVIDER_REFACTOR.md for detailed architecture
+2. Check planning/eloquent-schema-refactor.md for original vision
+3. Review RELATION_CHAIN_WALKING.md for future enhancements
+4. Consult architecture analysis documents for current state
 
 **Status:** ✅ Design Complete - Ready for Implementation
+**Architecture:** Provider-Agnostic, Pluggable, Extensible, Community-Driven
