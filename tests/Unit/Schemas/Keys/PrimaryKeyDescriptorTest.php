@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Schemas\Keys;
+namespace NickPotts\Slice\Tests\Unit\Schemas\Keys;
 
 use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;
 

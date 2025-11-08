@@ -4,7 +4,7 @@ namespace NickPotts\Slice\Contracts;
 
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;
-use NickPotts\Slice\Schemas\RelationGraph;
+use NickPotts\Slice\Schemas\Relations\RelationGraph;
 
 /**
  * Contract for a table from any schema provider.

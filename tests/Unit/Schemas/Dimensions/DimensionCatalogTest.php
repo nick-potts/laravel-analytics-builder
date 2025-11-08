@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Schemas\Dimensions;
+namespace NickPotts\Slice\Tests\Unit\Schemas\Dimensions;
 
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 

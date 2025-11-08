@@ -52,7 +52,7 @@ class TimeDimension implements Dimension
         return $this->granularity;
     }
 
-    public function precision(): string
+    public function getPrecision(): string
     {
         return $this->precision;
     }
@@ -70,7 +70,7 @@ class TimeDimension implements Dimension
     /**
      * Set the column precision (date vs timestamp).
      */
-    public function precision(string $precision): self
+    public function withPrecision(string $precision): self
     {
         $this->precision = $precision;
 

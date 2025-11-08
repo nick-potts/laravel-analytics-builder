@@ -4,6 +4,7 @@ namespace NickPotts\Slice\Support;
 
 use NickPotts\Slice\Contracts\SchemaProvider;
 use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Exceptions\TableNotFoundException;
 use NickPotts\Slice\Support\Cache\SchemaCache;
 
 /**

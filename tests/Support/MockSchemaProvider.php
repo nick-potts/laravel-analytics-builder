@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Support;
+namespace NickPotts\Slice\Tests\Support;
 
 use NickPotts\Slice\Contracts\SchemaProvider;
 use NickPotts\Slice\Contracts\TableContract;

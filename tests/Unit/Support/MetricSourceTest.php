@@ -1,9 +1,9 @@
 <?php
 
-namespace Tests\Unit\Support;
+namespace NickPotts\Slice\Tests\Unit\Support;
 
 use NickPotts\Slice\Support\MetricSource;
-use Tests\Support\MockTableContract;
+use NickPotts\Slice\Tests\Support\MockTableContract;
 
 it('stores table and column', function () {
     $table = new MockTableContract('orders');

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Unit\Support\Cache;
+namespace NickPotts\Slice\Tests\Unit\Support\Cache;
 
 use NickPotts\Slice\Support\Cache\SchemaCache;
 

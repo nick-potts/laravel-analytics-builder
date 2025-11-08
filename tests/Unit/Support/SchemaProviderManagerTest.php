@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit\Support;
+namespace NickPotts\Slice\Tests\Unit\Support;
 
 use NickPotts\Slice\Exceptions\TableNotFoundException;
 use NickPotts\Slice\Support\AmbiguousTableException;
 use NickPotts\Slice\Support\SchemaProviderManager;
-use Tests\Support\MockSchemaProvider;
-use Tests\Support\MockTableContract;
+use NickPotts\Slice\Tests\Support\MockSchemaProvider;
+use NickPotts\Slice\Tests\Support\MockTableContract;
 
 it('registers providers', function () {
     $manager = new SchemaProviderManager;
