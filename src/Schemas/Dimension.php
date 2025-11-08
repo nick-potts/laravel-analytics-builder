@@ -16,9 +16,6 @@ class Dimension
 
     protected array $filters = [];
 
-    /**
-     * @return static
-     */
     public static function make(string $name): static
     {
         $dimension = new static;
