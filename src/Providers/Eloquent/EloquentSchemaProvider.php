@@ -39,11 +39,11 @@ class EloquentSchemaProvider implements CachableSchemaProvider
      */
     public function __construct(?array $directories = null)
     {
-        $this->scanner = new ModelScanner();
+        $this->scanner = new ModelScanner;
         $this->introspector = new ModelIntrospector(
-            new Introspectors\Keys\PrimaryKeyIntrospector(),
-            new Introspectors\Relations\RelationIntrospector(),
-            new Introspectors\Dimensions\DimensionIntrospector(),
+            new Introspectors\Keys\PrimaryKeyIntrospector,
+            new Introspectors\Relations\RelationIntrospector,
+            new Introspectors\Dimensions\DimensionIntrospector,
         );
 
         if ($directories === null) {
@@ -102,7 +102,7 @@ class EloquentSchemaProvider implements CachableSchemaProvider
             $metadata = $this->tableIndex[$tableName] ?? null;
         }
 
-        if (!$metadata) {
+        if (! $metadata) {
             throw new \InvalidArgumentException("Model for '{$reference}' not found");
         }
 
@@ -118,8 +118,8 @@ class EloquentSchemaProvider implements CachableSchemaProvider
         $this->ensureScanned();
 
         $metadata = $this->tableIndex[$table] ?? null;
-        if (!$metadata) {
-            return new RelationGraph();
+        if (! $metadata) {
+            return new RelationGraph;
         }
 
         return $metadata->relationGraph;
@@ -130,8 +130,8 @@ class EloquentSchemaProvider implements CachableSchemaProvider
         $this->ensureScanned();
 
         $metadata = $this->tableIndex[$table] ?? null;
-        if (!$metadata) {
-            return new DimensionCatalog();
+        if (! $metadata) {
+            return new DimensionCatalog;
         }
 
         return $metadata->dimensionCatalog;
@@ -146,14 +146,14 @@ class EloquentSchemaProvider implements CachableSchemaProvider
 
     public function cacheKey(): string
     {
-        return 'eloquent_schema_' . md5(serialize($this->directories));
+        return 'eloquent_schema_'.md5(serialize($this->directories));
     }
 
     public function toCache(): array
     {
         return [
             'directories' => $this->directories,
-            'models' => array_map(fn(ModelMetadata $m) => $m->toArray(), $this->models),
+            'models' => array_map(fn (ModelMetadata $m) => $m->toArray(), $this->models),
             'cached_at' => time(),
         ];
     }
@@ -174,7 +174,7 @@ class EloquentSchemaProvider implements CachableSchemaProvider
     public function isCacheValid(): bool
     {
         $cacheData = $this->cache->get($this->cacheKey());
-        if (!$cacheData) {
+        if (! $cacheData) {
             return false;
         }
 
@@ -217,14 +217,14 @@ class EloquentSchemaProvider implements CachableSchemaProvider
 
     private function ensureScanned(): void
     {
-        if (!$this->scanned) {
+        if (! $this->scanned) {
             $this->scan();
         }
     }
 
     private function directoryModifiedAfter(string $directory, int $timestamp): bool
     {
-        if (!is_dir($directory)) {
+        if (! is_dir($directory)) {
             return false;
         }
 
@@ -264,6 +264,7 @@ class EloquentSchemaProvider implements CachableSchemaProvider
     private function dirToNamespace(string $dir): string
     {
         $parts = explode('/', trim($dir, '/'));
+
         return implode('\\', array_map('ucfirst', $parts));
     }
 }

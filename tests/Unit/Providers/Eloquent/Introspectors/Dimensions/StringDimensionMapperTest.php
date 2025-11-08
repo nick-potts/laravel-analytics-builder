@@ -4,13 +4,13 @@ use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\StringDimensionM
 use NickPotts\Slice\Schemas\Dimensions\StringDimension;
 
 it('handles string cast type', function () {
-    $mapper = new StringDimensionMapper();
+    $mapper = new StringDimensionMapper;
 
     expect($mapper->handles())->toContain('string');
 });
 
 it('maps string cast to StringDimension', function () {
-    $mapper = new StringDimensionMapper();
+    $mapper = new StringDimensionMapper;
 
     $dimension = $mapper->map('country', 'string');
 
@@ -19,7 +19,7 @@ it('maps string cast to StringDimension', function () {
 });
 
 it('creates dimension with column name', function () {
-    $mapper = new StringDimensionMapper();
+    $mapper = new StringDimensionMapper;
 
     $dimension = $mapper->map('region', 'string');
 

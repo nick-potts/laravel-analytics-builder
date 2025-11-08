@@ -32,7 +32,7 @@ class TimeDimensionMapper implements DimensionMapper
     {
         // Determine precision based on cast type
         $baseCast = strtolower(strtok($castType, ':') ?: $castType);
-        $precision = str_contains($baseCast, 'date') && !str_contains($baseCast, 'datetime')
+        $precision = str_contains($baseCast, 'date') && ! str_contains($baseCast, 'datetime')
             ? 'date'
             : 'timestamp';
 

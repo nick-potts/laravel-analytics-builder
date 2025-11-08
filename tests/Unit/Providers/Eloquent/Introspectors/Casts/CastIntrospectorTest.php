@@ -4,8 +4,8 @@ use NickPotts\Slice\Providers\Eloquent\Introspectors\Casts\CastIntrospector;
 use Workbench\App\Models\Order;
 
 it('discovers all casts from model', function () {
-    $introspector = new CastIntrospector();
-    $model = new Order();
+    $introspector = new CastIntrospector;
+    $model = new Order;
 
     $casts = $introspector->discoverCasts($model);
 
@@ -15,8 +15,8 @@ it('discovers all casts from model', function () {
 });
 
 it('discovers temporal columns backward compatibility', function () {
-    $introspector = new CastIntrospector();
-    $model = new Order();
+    $introspector = new CastIntrospector;
+    $model = new Order;
 
     $columns = $introspector->discoverTemporalColumns($model);
 
@@ -28,8 +28,8 @@ it('discovers temporal columns backward compatibility', function () {
 });
 
 it('marks casts with metadata', function () {
-    $introspector = new CastIntrospector();
-    $model = new Order();
+    $introspector = new CastIntrospector;
+    $model = new Order;
 
     $casts = $introspector->discoverCasts($model);
 

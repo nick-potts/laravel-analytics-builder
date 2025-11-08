@@ -22,8 +22,8 @@ class DimensionIntrospector
         ?CastIntrospector $castIntrospector = null,
         ?DimensionMapperRegistry $mapperRegistry = null,
     ) {
-        $this->castIntrospector = $castIntrospector ?? new CastIntrospector();
-        $this->mapperRegistry = $mapperRegistry ?? new DimensionMapperRegistry();
+        $this->castIntrospector = $castIntrospector ?? new CastIntrospector;
+        $this->mapperRegistry = $mapperRegistry ?? new DimensionMapperRegistry;
     }
 
     /**
@@ -41,7 +41,7 @@ class DimensionIntrospector
 
             // Find mapper for this cast type
             $mapper = $this->mapperRegistry->getMapper($castInfo->castType);
-            if (!$mapper) {
+            if (! $mapper) {
                 continue;
             }
 
@@ -49,7 +49,7 @@ class DimensionIntrospector
             $dimension = $mapper->map($castInfo->column, $castInfo->castType);
             if ($dimension) {
                 // Use class name + column as key
-                $key = get_class($dimension) . '::' . $castInfo->column;
+                $key = get_class($dimension).'::'.$castInfo->column;
                 $dimensions[$key] = $dimension;
             }
         }
