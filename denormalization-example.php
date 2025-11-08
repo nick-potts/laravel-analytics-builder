@@ -92,10 +92,10 @@ $result = Slice::query()
 use Illuminate\Support\Facades\DB;
 
 $laravelQuery = DB::table('issues')
-    ->join('tenant_issue', function($join) {
+    ->join('tenant_issue', function ($join) {
         $join->on('ti_issue_id', '=', 'issues.id')
-             ->where('ti_tenant_id', '=', 1) // Slice puts filters in join conditions when needed
-             ->whereNull('ti_deleted_at');
+            ->where('ti_tenant_id', '=', 1) // Slice puts filters in join conditions when needed
+            ->whereNull('ti_deleted_at');
     })
     ->select([
         DB::raw('COUNT(issues.id) as total_issues'),
