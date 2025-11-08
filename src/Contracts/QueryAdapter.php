@@ -96,15 +96,11 @@ interface QueryAdapter
     /**
      * Get the underlying query builder.
      * Useful for driver-specific operations.
-     *
-     * @return mixed
      */
     public function getQuery(): mixed;
 
     /**
      * Convert the query to SQL string (for debugging).
-     *
-     * @return string
      */
     public function toSql(): string;
 }

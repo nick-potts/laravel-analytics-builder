@@ -46,8 +46,6 @@ interface QueryDriver
     /**
      * Get the grammar for this driver.
      * Grammar handles database-specific SQL generation.
-     *
-     * @return QueryGrammar
      */
     public function grammar(): QueryGrammar;
 }
