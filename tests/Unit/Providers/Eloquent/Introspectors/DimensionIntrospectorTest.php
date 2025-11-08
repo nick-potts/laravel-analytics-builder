@@ -5,8 +5,8 @@ use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
 use Workbench\App\Models\Order;
 
 it('discovers time dimensions from datetime casts', function () {
-    $introspector = new DimensionIntrospector();
-    $model = new Order();
+    $introspector = new DimensionIntrospector;
+    $model = new Order;
 
     $catalog = $introspector->introspect($model);
 
@@ -16,8 +16,8 @@ it('discovers time dimensions from datetime casts', function () {
 });
 
 it('skips appended attributes', function () {
-    $introspector = new DimensionIntrospector();
-    $model = new Order();
+    $introspector = new DimensionIntrospector;
+    $model = new Order;
 
     $catalog = $introspector->introspect($model);
 

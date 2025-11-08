@@ -4,15 +4,13 @@ use NickPotts\Slice\Providers\Eloquent\Introspectors\DimensionIntrospector;
 use NickPotts\Slice\Providers\Eloquent\Introspectors\PrimaryKeyIntrospector;
 use NickPotts\Slice\Providers\Eloquent\Introspectors\RelationIntrospector;
 use NickPotts\Slice\Providers\Eloquent\ModelIntrospector;
-use NickPotts\Slice\Schemas\Relations\RelationType;
 use Workbench\App\Models\Order;
-use Workbench\App\Models\OrderItem;
 
 it('introspects complete model metadata', function () {
     $introspector = new ModelIntrospector(
-        new PrimaryKeyIntrospector(),
-        new RelationIntrospector(),
-        new DimensionIntrospector(),
+        new PrimaryKeyIntrospector,
+        new RelationIntrospector,
+        new DimensionIntrospector,
     );
 
     $metadata = $introspector->introspect(Order::class);
@@ -24,9 +22,9 @@ it('introspects complete model metadata', function () {
 
 it('extracts relations during introspection', function () {
     $introspector = new ModelIntrospector(
-        new PrimaryKeyIntrospector(),
-        new RelationIntrospector(),
-        new DimensionIntrospector(),
+        new PrimaryKeyIntrospector,
+        new RelationIntrospector,
+        new DimensionIntrospector,
     );
 
     $metadata = $introspector->introspect(Order::class);
@@ -37,9 +35,9 @@ it('extracts relations during introspection', function () {
 
 it('extracts dimensions during introspection', function () {
     $introspector = new ModelIntrospector(
-        new PrimaryKeyIntrospector(),
-        new RelationIntrospector(),
-        new DimensionIntrospector(),
+        new PrimaryKeyIntrospector,
+        new RelationIntrospector,
+        new DimensionIntrospector,
     );
 
     $metadata = $introspector->introspect(Order::class);
@@ -49,9 +47,9 @@ it('extracts dimensions during introspection', function () {
 
 it('detects soft deletes', function () {
     $introspector = new ModelIntrospector(
-        new PrimaryKeyIntrospector(),
-        new RelationIntrospector(),
-        new DimensionIntrospector(),
+        new PrimaryKeyIntrospector,
+        new RelationIntrospector,
+        new DimensionIntrospector,
     );
 
     // Order doesn't have soft deletes
@@ -61,9 +59,9 @@ it('detects soft deletes', function () {
 
 it('detects timestamps property', function () {
     $introspector = new ModelIntrospector(
-        new PrimaryKeyIntrospector(),
-        new RelationIntrospector(),
-        new DimensionIntrospector(),
+        new PrimaryKeyIntrospector,
+        new RelationIntrospector,
+        new DimensionIntrospector,
     );
 
     $metadata = $introspector->introspect(Order::class);

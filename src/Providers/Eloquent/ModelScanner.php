@@ -46,13 +46,13 @@ class ModelScanner
             );
 
             // Try to load the class via autoloader (composer PSR-4)
-            if (!class_exists($className)) {
+            if (! class_exists($className)) {
                 continue;
             }
 
             try {
                 $reflection = new \ReflectionClass($className);
-                if ($reflection->isSubclassOf(Model::class) && !$reflection->isAbstract()) {
+                if ($reflection->isSubclassOf(Model::class) && ! $reflection->isAbstract()) {
                     $models[] = $className;
                 }
             } catch (\ReflectionException) {
@@ -82,7 +82,7 @@ class ModelScanner
         $relative = str_replace(['/', '\\'], '\\', $relative);
         $relative = preg_replace('/\.php$/i', '', $relative);
 
-        return rtrim($baseNamespace, '\\') . '\\' . $relative;
+        return rtrim($baseNamespace, '\\').'\\'.$relative;
     }
 
     private function normalizeDirectory(string $directory): ?string

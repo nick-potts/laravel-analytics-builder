@@ -24,7 +24,7 @@ class DimensionIntrospector
                 continue;
             }
 
-            $dimensions[TimeDimension::class . '::' . $column] = TimeDimension::make($column)
+            $dimensions[TimeDimension::class.'::'.$column] = TimeDimension::make($column)
                 ->precision($precision);
         }
 
@@ -32,7 +32,7 @@ class DimensionIntrospector
     }
 
     /**
-     * @return array<string, string>  Map of column => precision
+     * @return array<string, string> Map of column => precision
      */
     private function discoverTemporalColumns(Model $model): array
     {
