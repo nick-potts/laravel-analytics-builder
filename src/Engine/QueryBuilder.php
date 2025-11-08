@@ -455,6 +455,7 @@ class QueryBuilder
                     null, // No FK alias needed
                     null  // No FK alias needed
                 );
+
                 continue;
             }
 

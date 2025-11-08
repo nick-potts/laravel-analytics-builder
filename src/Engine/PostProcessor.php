@@ -326,7 +326,6 @@ class PostProcessor
     /**
      * Promote computed metrics from the database bucket so they can be evaluated in software.
      *
-     * @param  array  $databaseMetrics
      * @return array{0: array, 1: array}
      */
     protected function promoteDatabaseComputedMetrics(array $databaseMetrics): array
@@ -339,6 +338,7 @@ class PostProcessor
 
             if ($metricArray['computed'] ?? false) {
                 $promoted[] = $metricData;
+
                 continue;
             }
 
@@ -351,8 +351,6 @@ class PostProcessor
     /**
      * Promote computed metrics whose columns are missing from the row data.
      *
-     * @param  array  $databaseMetrics
-     * @param  array  $rows
      * @return array{0: array, 1: array}
      */
     protected function promoteMissingComputedMetrics(array $databaseMetrics, array $rows): array

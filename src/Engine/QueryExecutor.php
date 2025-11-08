@@ -147,8 +147,7 @@ class QueryExecutor
         string $leftAlias,
         string $rightAlias,
         bool $preserveUnmatchedLeftRows = false
-    ): array
-    {
+    ): array {
         if (empty($leftRows)) {
             return [];
         }
