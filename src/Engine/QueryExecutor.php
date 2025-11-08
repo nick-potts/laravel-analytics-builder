@@ -163,17 +163,25 @@ class QueryExecutor
                 continue;
             }
 
-            $index[$row[$rightAlias]][] = $row;
+            $normalizedKey = $this->normalizeJoinValue($row[$rightAlias]);
+
+            if ($normalizedKey === null) {
+                continue;
+            }
+
+            $index[$normalizedKey][] = $row;
         }
 
         if (empty($index)) {
-            return [];
+            return $preserveUnmatchedLeftRows ? $leftRows : [];
         }
 
         $joined = [];
 
         foreach ($leftRows as $row) {
-            $key = $row[$leftAlias] ?? null;
+            $key = array_key_exists($leftAlias, $row)
+                ? $this->normalizeJoinValue($row[$leftAlias])
+                : null;
 
             if ($key === null || ! isset($index[$key])) {
                 if ($preserveUnmatchedLeftRows) {
@@ -189,6 +197,47 @@ class QueryExecutor
         }
 
         return $joined;
+    }
+
+    protected function normalizeJoinValue(mixed $value): string|int|null
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.uP');
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+
+            if ($this->looksLikeDateString($trimmed)) {
+                try {
+                    $date = new \DateTimeImmutable($trimmed);
+
+                    return $date->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s.uP');
+                } catch (\Exception $e) {
+                    // Fall through to returning the trimmed string
+                }
+            }
+
+            return $trimmed;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return $value;
+    }
+
+    protected function looksLikeDateString(string $value): bool
+    {
+        return (bool) preg_match(
+            '/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:?\d{2})?)?$/',
+            $value
+        );
     }
 
     /**
