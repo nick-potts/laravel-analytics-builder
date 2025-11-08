@@ -20,6 +20,7 @@ class JoinResolver
     {
         $this->queryDimensions = $dimensions;
     }
+
     /**
      * Find the join path between two tables using BFS.
      *
