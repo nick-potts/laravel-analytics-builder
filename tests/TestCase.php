@@ -30,16 +30,20 @@ class TestCase extends Orchestra
     protected function tearDown(): void
     {
         // Clean disconnect between tests
-        DB::connection()->disconnect();
+        // TODO: verify not needed
+        //        DB::connection()->disconnect();
 
         parent::tearDown();
     }
 
     protected function getPackageProviders($app)
     {
-        return [
+        $providers = [
             SliceServiceProvider::class,
+            \SingleStore\Laravel\SingleStoreProvider::class,
         ];
+
+        return $providers;
     }
 
     public function getEnvironmentSetUp($app)

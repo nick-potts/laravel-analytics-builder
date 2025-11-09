@@ -5,7 +5,15 @@
       "Bash(cat:*)",
       "mcp__jetbrains__list_directory_tree",
       "Bash(vendor/bin/phpstan analyze:*)",
-      "Bash(vendor/bin/pest:*)"
+      "Bash(vendor/bin/pest:*)",
+      "Bash(git log:*)",
+      "mcp__jetbrains__get_file_text_by_path",
+      "mcp__jetbrains__find_files_by_glob",
+      "mcp__jetbrains__create_new_file",
+      "Bash(php -r:*)",
+      "Bash(composer test:*)",
+      "Bash(/tmp/JoinResolver.php)",
+      "Bash(/tmp/DimensionResolver.php)"
     ],
     "deny": [],
     "ask": []
