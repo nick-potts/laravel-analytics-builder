@@ -24,7 +24,7 @@ final class JoinPathFinder
      * - No path exists between tables
      * - Tables are on different connections (cannot join)
      *
-     * @return array<JoinSpecification>|null  Ordered list of joins or null if no path
+     * @return array<JoinSpecification>|null Ordered list of joins or null if no path
      */
     public function find(
         TableContract $from,
