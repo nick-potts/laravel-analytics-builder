@@ -11,7 +11,7 @@ class MockTableContract implements TableContract
 {
     private string $tableName;
 
-    private ?string $connectionName = null;
+    private string $connectionName;
 
     private PrimaryKeyDescriptor $primaryKey;
 
@@ -27,7 +27,7 @@ class MockTableContract implements TableContract
         ?DimensionCatalog $dimensions = null,
     ) {
         $this->tableName = $tableName;
-        $this->connectionName = $connection;
+        $this->connectionName = $connection ?? $this->getDefaultConnection();
         $this->primaryKey = $primaryKey ?? new PrimaryKeyDescriptor(['id']);
         $this->relations = $relations ?? new RelationGraph;
         $this->dimensions = $dimensions ?? new DimensionCatalog;
@@ -38,7 +38,7 @@ class MockTableContract implements TableContract
         return $this->tableName;
     }
 
-    public function connection(): ?string
+    public function connection(): string
     {
         return $this->connectionName;
     }
@@ -56,5 +56,16 @@ class MockTableContract implements TableContract
     public function dimensions(): DimensionCatalog
     {
         return $this->dimensions;
+    }
+
+    private function getDefaultConnection(): string
+    {
+        // In tests, use 'testing' connection if available, otherwise 'default'
+        try {
+            \DB::connection('testing');
+            return 'testing';
+        } catch (\Throwable) {
+            return 'default';
+        }
     }
 }

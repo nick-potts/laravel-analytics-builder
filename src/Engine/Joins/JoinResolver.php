@@ -7,13 +7,12 @@ use NickPotts\Slice\Contracts\TableContract;
 /**
  * Resolves table joins needed for multi-table queries.
  *
- * The public API for join resolution. Coordinates JoinPathFinder and
- * JoinGraphBuilder to produce a database-agnostic join plan.
+ * The public API for join resolution. Uses JoinGraphBuilder (which internally
+ * uses JoinPathFinder) to produce a database-agnostic join plan.
  */
 final class JoinResolver
 {
     public function __construct(
-        private JoinPathFinder $pathFinder,
         private JoinGraphBuilder $graphBuilder,
     ) {}
 

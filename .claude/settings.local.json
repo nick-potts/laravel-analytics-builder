@@ -13,7 +13,8 @@
       "Bash(php -r:*)",
       "Bash(composer test:*)",
       "Bash(/tmp/JoinResolver.php)",
-      "Bash(/tmp/DimensionResolver.php)"
+      "Bash(/tmp/DimensionResolver.php)",
+      "Bash(./vendor/bin/pest:*)"
     ],
     "deny": [],
     "ask": []

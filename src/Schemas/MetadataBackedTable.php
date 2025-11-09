@@ -22,9 +22,9 @@ final class MetadataBackedTable implements TableContract
         return $this->metadata->tableName;
     }
 
-    public function connection(): ?string
+    public function connection(): string
     {
-        return $this->metadata->connection;
+        return $this->metadata->connection ?? 'default';
     }
 
     public function primaryKey(): PrimaryKeyDescriptor

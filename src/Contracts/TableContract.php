@@ -30,12 +30,12 @@ interface TableContract
     /**
      * Get the database connection name.
      *
-     * Used to determine which database driver to use.
-     * Returns null for non-database sources.
+     * Every table must explicitly declare its connection to prevent ambiguity.
+     * Use 'default' for tables on Laravel's default connection.
      *
-     * @return string|null Connection name (e.g., 'mysql', 'pgsql') or null
+     * @return string Connection name (e.g., 'default', 'mysql', 'pgsql')
      */
-    public function connection(): ?string;
+    public function connection(): string;
 
     /**
      * Get the primary key descriptor.

@@ -32,9 +32,9 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
             return $this->tableName;
         }
 
-        public function connection(): ?string
+        public function connection(): string
         {
-            return null;
+            return 'default';
         }
 
         public function primaryKey(): PrimaryKeyDescriptor

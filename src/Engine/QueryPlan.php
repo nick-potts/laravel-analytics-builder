@@ -3,6 +3,7 @@
 namespace NickPotts\Slice\Engine;
 
 use Illuminate\Database\ConnectionInterface;
+use NickPotts\Slice\Engine\Joins\JoinPlan;
 use NickPotts\Slice\Support\MetricSource;
 
 /**
@@ -13,6 +14,7 @@ use NickPotts\Slice\Support\MetricSource;
  * - Tables involved
  * - Metrics to select
  * - Connection to use
+ * - Join plan to connect multiple tables
  */
 class QueryPlan
 {
@@ -20,6 +22,7 @@ class QueryPlan
         public \NickPotts\Slice\Contracts\TableContract $primaryTable,
         public array $tables,
         public array $metrics,
+        public JoinPlan $joinPlan,
         public ?ConnectionInterface $connection = null,
     ) {}
 

@@ -100,20 +100,12 @@ final class JoinPathFinder
     /**
      * Check if two tables are on the same connection.
      *
-     * Tables without explicit connections are assumed compatible.
+     * All tables must explicitly declare their connection (never null).
+     * This prevents ambiguity about which database a table actually uses.
      */
     private function sameConnection(TableContract $from, TableContract $to): bool
     {
-        $fromConnection = $from->connection();
-        $toConnection = $to->connection();
-
-        // If either has no explicit connection, assume they're compatible
-        if ($fromConnection === null || $toConnection === null) {
-            return true;
-        }
-
-        // Both have explicit connections, must match
-        return $fromConnection === $toConnection;
+        return $from->connection() === $to->connection();
     }
 
     /**

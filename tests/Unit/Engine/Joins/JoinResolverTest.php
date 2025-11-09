@@ -33,9 +33,9 @@ function createResolverTestTable(string $name, array $relations = []): TableCont
             return $this->tableName;
         }
 
-        public function connection(): ?string
+        public function connection(): string
         {
-            return null;
+            return 'default';
         }
 
         public function primaryKey(): PrimaryKeyDescriptor
@@ -81,7 +81,7 @@ beforeEach(function () {
 
     $pathFinder = new JoinPathFinder($manager);
     $graphBuilder = new JoinGraphBuilder($pathFinder);
-    $this->resolver = new JoinResolver($pathFinder, $graphBuilder);
+    $this->resolver = new JoinResolver($graphBuilder);
 });
 
 it('resolves join plan from tables', function () {
