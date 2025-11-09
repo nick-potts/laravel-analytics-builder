@@ -27,7 +27,7 @@ it('executes AVG aggregation correctly', function () {
 
     $sql = $avg->toSql($grammar);
 
-    $fullSql = 'SELECT ' . $sql . ' FROM orders';
+    $fullSql = 'SELECT '.$sql.' FROM orders';
     $result = DB::connection('testing')->selectOne($fullSql);
 
     // Average of 100, 200, 300 = 200

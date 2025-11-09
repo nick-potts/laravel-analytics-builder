@@ -28,7 +28,7 @@ it('executes SUM aggregation correctly', function () {
     $sql = $sum->toSql($grammar);
 
     // Build raw SQL with the aggregation
-    $fullSql = 'SELECT ' . $sql . ' FROM orders';
+    $fullSql = 'SELECT '.$sql.' FROM orders';
     $result = DB::connection('testing')->selectOne($fullSql);
 
     // Different drivers return different numeric formats (450, 450.0, 450.00), so cast to float

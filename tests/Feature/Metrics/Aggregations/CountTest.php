@@ -27,7 +27,7 @@ it('executes COUNT aggregation correctly', function () {
 
     $sql = $count->toSql($grammar);
 
-    $fullSql = 'SELECT ' . $sql . ' FROM orders';
+    $fullSql = 'SELECT '.$sql.' FROM orders';
     $result = DB::connection('testing')->selectOne($fullSql);
 
     expect((int) $result->count_orders_id)->toEqual(3);

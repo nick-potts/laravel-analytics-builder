@@ -30,7 +30,7 @@ class SliceManager
     /**
      * Normalize aggregations to MetricSource objects
      *
-     * @param array<Aggregation> $aggregations
+     * @param  array<Aggregation>  $aggregations
      * @return array<array{source: \Slice\Support\MetricSource, aggregation: Aggregation}>
      */
     public function normalizeMetrics(array $aggregations): array

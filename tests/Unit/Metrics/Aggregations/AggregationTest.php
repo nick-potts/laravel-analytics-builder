@@ -1,8 +1,8 @@
 <?php
 
-use NickPotts\Slice\Metrics\Aggregations\Sum;
-use NickPotts\Slice\Metrics\Aggregations\Count;
 use NickPotts\Slice\Metrics\Aggregations\Avg;
+use NickPotts\Slice\Metrics\Aggregations\Count;
+use NickPotts\Slice\Metrics\Aggregations\Sum;
 
 it('creates aggregation with make factory', function () {
     $sum = Sum::make('orders.total');

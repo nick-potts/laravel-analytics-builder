@@ -19,7 +19,7 @@ class SliceServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->singleton('slice.schema-provider-manager', function () {
-            return new \NickPotts\Slice\Support\SchemaProviderManager();
+            return new \NickPotts\Slice\Support\SchemaProviderManager;
         });
 
         $this->app->singleton('slice', function ($app) {
@@ -49,6 +49,6 @@ class SliceServiceProvider extends PackageServiceProvider
     private function registerEloquentProvider(): void
     {
         $manager = $this->app->make('slice.schema-provider-manager');
-        $manager->register(new \NickPotts\Slice\Providers\Eloquent\EloquentSchemaProvider());
+        $manager->register(new \NickPotts\Slice\Providers\Eloquent\EloquentSchemaProvider);
     }
 }

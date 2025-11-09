@@ -7,11 +7,11 @@ use NickPotts\Slice\Tests\Support\MockSchemaProvider;
 use NickPotts\Slice\Tests\Support\MockTableContract;
 
 it('adds normalized metrics', function () {
-    $manager = new SchemaProviderManager();
+    $manager = new SchemaProviderManager;
     $builder = new QueryBuilder($manager);
 
     $table = new MockTableContract('orders');
-    $provider = new MockSchemaProvider();
+    $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     $manager->register($provider);
 
@@ -28,11 +28,11 @@ it('adds normalized metrics', function () {
 });
 
 it('builds query plan', function () {
-    $manager = new SchemaProviderManager();
+    $manager = new SchemaProviderManager;
     $builder = new QueryBuilder($manager);
 
     $table = new MockTableContract('orders');
-    $provider = new MockSchemaProvider();
+    $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     $manager->register($provider);
 
@@ -50,7 +50,7 @@ it('builds query plan', function () {
 });
 
 it('throws on no metrics', function () {
-    $manager = new SchemaProviderManager();
+    $manager = new SchemaProviderManager;
     $builder = new QueryBuilder($manager);
 
     expect(fn () => $builder->build())

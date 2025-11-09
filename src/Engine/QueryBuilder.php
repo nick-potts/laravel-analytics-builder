@@ -3,7 +3,6 @@
 namespace NickPotts\Slice\Engine;
 
 use Illuminate\Database\ConnectionInterface;
-use NickPotts\Slice\Contracts\SchemaProvider;
 use NickPotts\Slice\Support\MetricSource;
 use NickPotts\Slice\Support\SchemaProviderManager;
 
@@ -19,12 +18,14 @@ class QueryBuilder
 
     /**
      * Metrics to include in the query, keyed by their source
+     *
      * @var array<string, MetricSource>
      */
     private array $metrics = [];
 
     /**
      * Tables involved in the query (de-duped)
+     *
      * @var array<string, \Slice\Contracts\TableContract>
      */
     private array $tables = [];
@@ -42,7 +43,7 @@ class QueryBuilder
     /**
      * Add normalized metrics to the query
      *
-     * @param array<array{source: MetricSource, aggregation: \Slice\Metrics\Aggregations\Aggregation}> $normalizedMetrics
+     * @param  array<array{source: MetricSource, aggregation: \Slice\Metrics\Aggregations\Aggregation}>  $normalizedMetrics
      */
     public function addMetrics(array $normalizedMetrics): self
     {
@@ -65,8 +66,8 @@ class QueryBuilder
                 $this->connection = $this->getConnectionFromTable($table, $connection);
             } elseif ($isNewTable && $this->connection->getName() !== ($connection ?? $table->connection())) {
                 throw new \RuntimeException(
-                    'Cannot mix tables from different connections: ' .
-                    $this->connection->getName() . ' and ' . ($connection ?? $table->connection())
+                    'Cannot mix tables from different connections: '.
+                    $this->connection->getName().' and '.($connection ?? $table->connection())
                 );
             }
         }
@@ -100,6 +101,7 @@ class QueryBuilder
     private function getConnectionFromTable($table, ?string $connectionName): ConnectionInterface
     {
         $connectionName = $connectionName ?? $table->connection();
+
         return \DB::connection($connectionName);
     }
 }
