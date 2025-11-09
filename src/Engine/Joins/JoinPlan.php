@@ -2,8 +2,6 @@
 
 namespace NickPotts\Slice\Engine\Joins;
 
-use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
-
 /**
  * Describes a set of joins needed to connect multiple tables.
  *

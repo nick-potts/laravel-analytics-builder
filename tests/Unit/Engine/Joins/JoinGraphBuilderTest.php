@@ -21,7 +21,8 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
         );
     }
 
-    return new class($name, $relationGraph) implements TableContract {
+    return new class($name, $relationGraph) implements TableContract
+    {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
@@ -152,7 +153,7 @@ it('deduplicates joins when same join appears in multiple paths', function () {
 
     $dedupeKeys = [];
     foreach ($plan->all() as $join) {
-        $key = $join->fromTable . '->' . $join->toTable;
+        $key = $join->fromTable.'->'.$join->toTable;
         expect($dedupeKeys)->not->toHaveKey($key);
         $dedupeKeys[$key] = true;
     }

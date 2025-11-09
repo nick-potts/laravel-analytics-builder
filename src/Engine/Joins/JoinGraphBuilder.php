@@ -25,11 +25,10 @@ final class JoinGraphBuilder
      * Returns empty plan if tables cannot be connected (e.g., different connections).
      *
      * @param  array<TableContract>  $tables
-     * @return JoinPlan
      */
     public function build(array $tables): JoinPlan
     {
-        $plan = new JoinPlan();
+        $plan = new JoinPlan;
 
         // Single table or none, no joins needed
         if (count($tables) <= 1) {
@@ -51,7 +50,7 @@ final class JoinGraphBuilder
                 if ($path !== null) {
                     // Add all joins from path to plan (with deduplication)
                     foreach ($path as $joinSpec) {
-                        $key = $joinSpec->fromTable . '->' . $joinSpec->toTable;
+                        $key = $joinSpec->fromTable.'->'.$joinSpec->toTable;
 
                         if (! isset($dedupeKeys[$key])) {
                             $dedupeKeys[$key] = true;

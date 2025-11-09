@@ -20,7 +20,8 @@ function createMockTable(string $name, array $relations = []): TableContract
         );
     }
 
-    return new class($name, $relationGraph) implements TableContract {
+    return new class($name, $relationGraph) implements TableContract
+    {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
