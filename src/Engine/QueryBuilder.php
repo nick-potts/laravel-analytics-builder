@@ -16,6 +16,7 @@ use NickPotts\Slice\Support\SchemaProviderManager;
 class QueryBuilder
 {
     private SchemaProviderManager $manager;
+
     private JoinResolver $joinResolver;
 
     /**

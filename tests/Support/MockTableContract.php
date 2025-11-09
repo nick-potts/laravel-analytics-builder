@@ -63,6 +63,7 @@ class MockTableContract implements TableContract
         // In tests, use 'testing' connection if available, otherwise 'default'
         try {
             \DB::connection('testing');
+
             return 'testing';
         } catch (\Throwable) {
             return 'default';
