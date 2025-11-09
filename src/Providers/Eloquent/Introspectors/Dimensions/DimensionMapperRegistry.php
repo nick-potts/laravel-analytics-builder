@@ -22,13 +22,13 @@ class DimensionMapperRegistry
     public function __construct()
     {
         // Register built-in mappers
-        $this->register(new TimeDimensionMapper());
+        $this->register(new TimeDimensionMapper);
 
         // EnumDimensionMapper is special - it checks dynamically if a class is an enum
-        $this->dynamicMappers[] = new EnumDimensionMapper();
+        $this->dynamicMappers[] = new EnumDimensionMapper;
 
-        $this->register(new BooleanDimensionMapper());
-        $this->register(new StringDimensionMapper());
+        $this->register(new BooleanDimensionMapper);
+        $this->register(new StringDimensionMapper);
     }
 
     /**
@@ -42,8 +42,8 @@ class DimensionMapperRegistry
             if (isset($this->handlers[$castType])) {
                 throw new RuntimeException(
                     "Cast type '{$castType}' is already handled by "
-                    . get_class($this->handlers[$castType]) . '. '
-                    . "Cannot register " . get_class($mapper) . '.'
+                    .get_class($this->handlers[$castType]).'. '
+                    .'Cannot register '.get_class($mapper).'.'
                 );
             }
 

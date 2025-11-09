@@ -1,15 +1,15 @@
 <?php
 
-use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\DimensionMapperRegistry;
-use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\TimeDimensionMapper;
 use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\BooleanDimensionMapper;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\DimensionMapperRegistry;
 use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\StringDimensionMapper;
-use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
+use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\TimeDimensionMapper;
 use NickPotts\Slice\Schemas\Dimensions\BooleanDimension;
 use NickPotts\Slice\Schemas\Dimensions\StringDimension;
+use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
 
 it('registers built-in mappers on construction', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
 
     expect($registry->getMapper('datetime'))->toBeInstanceOf(TimeDimensionMapper::class);
     expect($registry->getMapper('boolean'))->toBeInstanceOf(BooleanDimensionMapper::class);
@@ -17,7 +17,7 @@ it('registers built-in mappers on construction', function () {
 });
 
 it('maps datetime cast to TimeDimension', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
     $mapper = $registry->getMapper('datetime');
 
     $dimension = $mapper->map('created_at', 'datetime');
@@ -28,7 +28,7 @@ it('maps datetime cast to TimeDimension', function () {
 });
 
 it('maps date cast to TimeDimension with date precision', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
     $mapper = $registry->getMapper('date');
 
     $dimension = $mapper->map('birth_date', 'date');
@@ -38,7 +38,7 @@ it('maps date cast to TimeDimension with date precision', function () {
 });
 
 it('maps boolean cast to BooleanDimension', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
     $mapper = $registry->getMapper('boolean');
 
     $dimension = $mapper->map('is_active', 'boolean');
@@ -48,7 +48,7 @@ it('maps boolean cast to BooleanDimension', function () {
 });
 
 it('maps string cast to StringDimension', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
     $mapper = $registry->getMapper('string');
 
     $dimension = $mapper->map('country', 'string');
@@ -58,7 +58,7 @@ it('maps string cast to StringDimension', function () {
 });
 
 it('handles custom format casts', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
 
     // Custom datetime format should match 'datetime' mapper
     $dimension = $registry->getMapper('datetime:Y-m-d H:i:s')
@@ -68,9 +68,9 @@ it('handles custom format casts', function () {
 });
 
 it('throws on conflicting handlers', function () {
-    $registry = new DimensionMapperRegistry();
+    $registry = new DimensionMapperRegistry;
 
     // Trying to register a mapper that handles a type already handled should throw
-    expect(fn () => $registry->register(new StringDimensionMapper()))
+    expect(fn () => $registry->register(new StringDimensionMapper))
         ->toThrow(RuntimeException::class);
 });

@@ -56,7 +56,7 @@ class CastIntrospector
         // Discover from legacy $dates property
         foreach ($this->dateMutators($model) as $column => $castType) {
             // Only add if not already discovered from getCasts()
-            if (!isset($casts[$column])) {
+            if (! isset($casts[$column])) {
                 $casts[$column] = new CastInfo(
                     column: $column,
                     castType: $castType,
@@ -136,7 +136,7 @@ class CastIntrospector
      */
     private function dateMutators(Model $model): array
     {
-        if (!method_exists($model, 'getDates')) {
+        if (! method_exists($model, 'getDates')) {
             return [];
         }
 

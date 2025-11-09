@@ -5,21 +5,21 @@ use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
 use Workbench\App\Models\Order;
 
 it('discovers time dimensions from datetime casts', function () {
-    $introspector = new DimensionIntrospector();
-    $model = new Order();
+    $introspector = new DimensionIntrospector;
+    $model = new Order;
 
     $catalog = $introspector->introspect($model);
 
     // Order model has created_at and updated_at
     $timeDimensions = $catalog->ofType(TimeDimension::class);
     expect($timeDimensions)->toHaveCount(2);
-    expect($timeDimensions)->toHaveKey(TimeDimension::class . '::created_at');
-    expect($timeDimensions)->toHaveKey(TimeDimension::class . '::updated_at');
+    expect($timeDimensions)->toHaveKey(TimeDimension::class.'::created_at');
+    expect($timeDimensions)->toHaveKey(TimeDimension::class.'::updated_at');
 });
 
 it('skips appended attributes', function () {
-    $introspector = new DimensionIntrospector();
-    $model = new Order();
+    $introspector = new DimensionIntrospector;
+    $model = new Order;
 
     // Get all dimensions from the model
     $catalog = $introspector->introspect($model);

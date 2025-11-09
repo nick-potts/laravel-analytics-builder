@@ -4,14 +4,14 @@ use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\BooleanDimension
 use NickPotts\Slice\Schemas\Dimensions\BooleanDimension;
 
 it('handles boolean cast types', function () {
-    $mapper = new BooleanDimensionMapper();
+    $mapper = new BooleanDimensionMapper;
 
     expect($mapper->handles())->toContain('bool');
     expect($mapper->handles())->toContain('boolean');
 });
 
 it('maps boolean cast to BooleanDimension', function () {
-    $mapper = new BooleanDimensionMapper();
+    $mapper = new BooleanDimensionMapper;
 
     $dimension = $mapper->map('is_active', 'boolean');
 
@@ -20,7 +20,7 @@ it('maps boolean cast to BooleanDimension', function () {
 });
 
 it('maps bool cast to BooleanDimension', function () {
-    $mapper = new BooleanDimensionMapper();
+    $mapper = new BooleanDimensionMapper;
 
     $dimension = $mapper->map('is_premium', 'bool');
 

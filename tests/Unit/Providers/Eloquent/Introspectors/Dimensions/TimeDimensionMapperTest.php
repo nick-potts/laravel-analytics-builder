@@ -4,7 +4,7 @@ use NickPotts\Slice\Providers\Eloquent\Introspectors\Dimensions\TimeDimensionMap
 use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
 
 it('handles datetime cast', function () {
-    $mapper = new TimeDimensionMapper();
+    $mapper = new TimeDimensionMapper;
 
     expect($mapper->handles())->toContain('datetime');
     expect($mapper->handles())->toContain('immutable_datetime');
@@ -13,7 +13,7 @@ it('handles datetime cast', function () {
 });
 
 it('maps datetime to timestamp precision', function () {
-    $mapper = new TimeDimensionMapper();
+    $mapper = new TimeDimensionMapper;
 
     $dimension = $mapper->map('created_at', 'datetime');
 
@@ -22,7 +22,7 @@ it('maps datetime to timestamp precision', function () {
 });
 
 it('maps timestamp to timestamp precision', function () {
-    $mapper = new TimeDimensionMapper();
+    $mapper = new TimeDimensionMapper;
 
     $dimension = $mapper->map('published_at', 'timestamp');
 
@@ -31,7 +31,7 @@ it('maps timestamp to timestamp precision', function () {
 });
 
 it('maps date to date precision', function () {
-    $mapper = new TimeDimensionMapper();
+    $mapper = new TimeDimensionMapper;
 
     $dimension = $mapper->map('birth_date', 'date');
 
@@ -40,7 +40,7 @@ it('maps date to date precision', function () {
 });
 
 it('maps immutable_date to date precision', function () {
-    $mapper = new TimeDimensionMapper();
+    $mapper = new TimeDimensionMapper;
 
     $dimension = $mapper->map('date_only', 'immutable_date');
 
@@ -49,7 +49,7 @@ it('maps immutable_date to date precision', function () {
 });
 
 it('handles custom format datetime casts', function () {
-    $mapper = new TimeDimensionMapper();
+    $mapper = new TimeDimensionMapper;
 
     $dimension = $mapper->map('custom_date', 'datetime:Y-m-d H:i:s');
 
