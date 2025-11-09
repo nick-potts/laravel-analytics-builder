@@ -11,7 +11,9 @@
       "mcp__jetbrains__find_files_by_glob",
       "mcp__jetbrains__create_new_file",
       "Bash(php -r:*)",
-      "Bash(composer test:*)"
+      "Bash(composer test:*)",
+      "Bash(/tmp/JoinResolver.php)",
+      "Bash(/tmp/DimensionResolver.php)"
     ],
     "deny": [],
     "ask": []

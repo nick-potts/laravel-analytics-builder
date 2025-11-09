@@ -63,6 +63,57 @@
 | Write end-to-end tests   | ⏳ PENDING | Multi-provider query tests                     |
 | **Phase 3 Subtotal**     | **0%**    | 0/4 tasks started                              |
 
+#### Phase 3 Detailed Plan (First-Principles Query Engine Rebuild)
+
+**Context & Guardrails**
+- `src/Engine/QueryBuilder.php` and its legacy adapters were removed, so this phase delivers a net-new provider-native query pipeline rather than a refactor.  
+- All runtime surfaces (metrics, dimensions, filters, joins, aggregations) must speak only in terms of `SchemaProviderManager`, `MetricSource`, `TableContract`, and provider metadata (`RelationGraph`, `DimensionCatalog`, `PrimaryKeyDescriptor`).  
+- The rebuilt engine must leave stable seams for Phase 4 (base-table heuristics) and Phase 5 (relation chain filters) so we avoid another churn cycle once those phases begin.
+
+**Sequenced Workstreams**
+1. **Domain framing & input contracts (Day 1)**  
+   - Map the end-to-end flow (`Slice::query()` → DSL definitions → normalization → planning → execution) inside `planning/ARCHITECTURE_INDEX.md` so the new builder has explicit upstream/downstream contracts.  
+   - Define value objects for `ResolvedMetric`, `ResolvedDimension`, `QueryContext`, and `QueryPlan` that encapsulate provider metadata, aggregation intent, requested grain, and filter requirements.  
+   - Document how these objects depend on `SchemaProviderManager` so every later step has clear inputs/outputs and typed guarantees.
+2. **Schema-driven normalization pipeline (Days 1-2)**  
+   - Reimplement the metric/dimension normalization layer so all DSL helpers delegate to a shared `MetricNormalizer` that calls `SchemaProviderManager::parseMetricSource()`.  
+   - Add per-request memoization caches keyed by metric/dimension signatures to avoid repeated provider lookups while respecting cache invalidation.  
+   - Emit actionable validation exceptions up front for ambiguous tables, unsupported provider prefixes, or dimension grain mismatches.
+3. **Query planner & join graph (Days 2-4)**  
+   - Author a fresh `Engine\QueryBuilder` that builds plans from first principles: collect participating tables, enforce single-connection constraints (flagging cross-connection mixes for future work), and emit a typed `QueryPlan`.  
+   - Implement a provider-powered `JoinResolver` that walks `RelationGraph` objects via BFS, outputs deterministic join specs, and reports “no path” situations with hints on which provider/table lacks relations.  
+   - Build supporting planners (`DatabasePlan`, `CTEPlan`, `SoftwareJoinPlan`) plus a `PlanSelector` that chooses the cheapest viable strategy based on relation availability, aggregation type, and requested dimensions.
+4. **Execution drivers & runtime wiring (Days 4-5)**  
+   - Introduce a `DriverRegistry` that maps provider connection names (`mysql`, `pgsql`, `sqlite`, `array`) to execution adapters so the rebuilt builder remains transport-agnostic.  
+   - Rewire the `Slice` facade, console commands, and config bootstrapping to resolve a shared `SchemaProviderManager`, inject it into the builder, and expose extension hooks for registering custom providers/drivers.  
+   - Add instrumentation hooks (timers + structured debug output) so we can verify < 50 ms plan overhead in CI.
+5. **Validation & developer ergonomics (Day 5)**  
+   - Create fake providers/drivers under `tests/Fixtures/Providers` to simulate multi-provider joins, connection mismatches, and relation gaps without live databases.  
+   - Add end-to-end feature tests covering (a) single-table aggregations, (b) multi-hop joins, (c) mixed-provider but single-connection queries, and (d) fallback to software joins when no relation path exists.  
+   - Update `planning/IMPLEMENTATION_PROGRESS.md` and README snippets to explain the new builder lifecycle so future contributors can reason about it quickly.
+
+**Testing Strategy**
+- Unit coverage for the new normalization layer, join resolver BFS, plan selector heuristics, and driver registry (using fake providers/drivers).  
+- Feature tests that run the full query lifecycle for Eloquent-backed and synthetic providers to prove provider metadata is honored end-to-end.  
+- Contract tests verifying precise error messages for ambiguous tables, missing relations, cross-connection attempts, and unsupported dimension grains.  
+- Benchmark harness (artisan command or PHPUnit @group performance) capturing cold vs warm builder timings to confirm the < 50 ms requirement.
+
+**Risks & Mitigations**
+- *Scope creep while rebuilding from scratch* → freeze the MVP feature set (existing aggregation + join capabilities) and explicitly backlog everything else.  
+- *Provider metadata gaps discovered late* → add guard clauses plus developer-facing diagnostics as soon as required relation/dimension info is missing.  
+- *Performance regressions* → bake in per-request memoization and leverage Phase 1 `SchemaCache`; profile early with telemetry hooks.  
+- *Driver inconsistencies* → define a strict `DriverContract` so MySQL, Postgres, SQLite, and software drivers share identical expectations.
+
+**Dependencies & Prep**
+- Phase 1/2 artifacts (`SchemaProviderManager`, `MetricSource`, `SchemaCache`, `EloquentSchemaProvider`) must already be bound in the container.  
+- Representative fixtures/models for metrics, dimensions, and relations need to exist so we can exercise every planning scenario.  
+- Align driver requirements with infra to ensure the necessary database connections are available for integration tests.
+
+**Definition of Done**
+- New `Engine\QueryBuilder`, `JoinResolver`, `DimensionResolver`, and driver registry exist, rely solely on provider metadata, and power Slice queries with zero legacy table classes.  
+- PHPUnit + PHPStan suites cover the rebuilt pipeline, with feature tests demonstrating provider-driven aggregations, join planning, and precise error messaging.  
+- Runtime wiring (facade, commands, docs) points to the new builder, and instrumentation proves plan overhead stays within the 50 ms budget.
+
 ---
 
 ### Phase 4: Base Table Resolution (Week 6) - PENDING
