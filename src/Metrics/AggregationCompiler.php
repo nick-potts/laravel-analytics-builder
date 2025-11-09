@@ -37,33 +37,49 @@ class AggregationCompiler
     public static function compile(Aggregation $aggregation, Grammar $grammar): string
     {
         $aggregationClass = get_class($aggregation);
-        // Get driver name from grammar class name (e.g., MySqlGrammar -> mysql)
-        $grammarClass = class_basename($grammar);
-        $driver = strtolower(str_replace('Grammar', '', $grammarClass));
-        if ($driver === 'sqlite') {
-            $driver = 'sqlite';
-        } elseif (str_starts_with($driver, 'mysql')) {
-            $driver = 'mysql';
-        } elseif (str_starts_with($driver, 'postgres')) {
-            $driver = 'pgsql';
-        }
+        $driver = static::normalizeDriverName($grammar);
 
         if (! isset(static::$compilers[$aggregationClass])) {
+            $aggregationName = class_basename($aggregationClass);
             throw new \RuntimeException(
-                "No compiler registered for aggregation: {$aggregationClass}"
+                "Aggregation '{$aggregationName}' is not registered. "
+                .'Make sure the aggregation class is loaded and its compilers are registered in the service provider.'
             );
         }
 
         $driverCompilers = static::$compilers[$aggregationClass];
 
         if (! isset($driverCompilers[$driver])) {
+            $aggregationName = class_basename($aggregationClass);
+            $supportedDrivers = implode(', ', array_keys($driverCompilers));
             throw new \RuntimeException(
-                "No compiler registered for aggregation {$aggregationClass} on driver: {$driver}"
+                "Aggregation '{$aggregationName}' does not support driver '{$driver}'. "
+                ."Supported drivers: {$supportedDrivers}."
             );
         }
 
         $compiler = $driverCompilers[$driver];
         return $compiler($aggregation, $grammar);
+    }
+
+    /**
+     * Normalize driver name from Grammar class or actual connection driver
+     */
+    private static function normalizeDriverName(Grammar $grammar): string
+    {
+        $grammarClass = class_basename($grammar);
+        $driver = strtolower(str_replace('Grammar', '', $grammarClass));
+
+        // Map driver names to canonical names
+        if ($driver === 'sqlite') {
+            return 'sqlite';
+        } elseif (str_starts_with($driver, 'mysql') || $driver === 'mariadb') {
+            return 'mysql';
+        } elseif (str_starts_with($driver, 'postgres')) {
+            return 'pgsql';
+        }
+
+        return $driver;
     }
 
     /**
