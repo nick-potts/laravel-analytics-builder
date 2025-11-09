@@ -23,7 +23,8 @@ function createManualTable(string $name, array $dimensions = [], array $relation
 
     $catalog = new DimensionCatalog($dimensions);
 
-    return new class($name, $relationGraph, $catalog) implements SliceSource {
+    return new class($name, $relationGraph, $catalog) implements SliceSource
+    {
         public function __construct(
             private string $tableName,
             private RelationGraph $relationGraph,

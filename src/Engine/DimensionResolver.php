@@ -20,7 +20,7 @@ final class DimensionResolver
      * Returns a mapping of table name => dimension instance from that table's catalog.
      *
      * @param  array<SliceSource>  $tables
-     * @return array<string, Dimension>  Keyed by table name
+     * @return array<string, Dimension> Keyed by table name
      */
     public function resolveDimension(
         Dimension $dimension,

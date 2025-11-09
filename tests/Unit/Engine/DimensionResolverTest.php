@@ -14,7 +14,8 @@ function createDimensionResolverTestTable(string $name, array $dimensions = []):
 {
     $catalog = new DimensionCatalog($dimensions);
 
-    return new class($name, $catalog) implements SliceSource {
+    return new class($name, $catalog) implements SliceSource
+    {
         public function __construct(
             private string $tableName,
             private DimensionCatalog $dimensionCatalog,

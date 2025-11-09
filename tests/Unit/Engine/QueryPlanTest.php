@@ -10,7 +10,7 @@ it('stores primary table', function () {
         primaryTable: $table,
         tables: ['orders' => $table],
         metrics: [],
-        joinPlan: new JoinPlan(),
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->primaryTable)->toBe($table);
@@ -22,7 +22,7 @@ it('returns primary table name', function () {
         primaryTable: $table,
         tables: ['orders' => $table],
         metrics: [],
-        joinPlan: new JoinPlan(),
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->getPrimaryTableName())->toBe('orders');
@@ -39,7 +39,7 @@ it('returns all table names', function () {
             'customers' => $customers,
         ],
         metrics: [],
-        joinPlan: new JoinPlan(),
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->getTableNames())->toEqual(['orders', 'customers']);
@@ -53,7 +53,7 @@ it('returns metrics', function () {
         primaryTable: $table,
         tables: ['orders' => $table],
         metrics: ['sum_orders_total' => $source],
-        joinPlan: new JoinPlan(),
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->getMetrics())->toBe(['sum_orders_total' => $source]);
@@ -61,7 +61,7 @@ it('returns metrics', function () {
 
 it('stores join plan', function () {
     $table = new MockSliceSource('orders');
-    $joinPlan = new JoinPlan();
+    $joinPlan = new JoinPlan;
 
     $plan = new QueryPlan(
         primaryTable: $table,

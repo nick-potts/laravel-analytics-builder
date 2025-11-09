@@ -22,7 +22,8 @@ function createResolverTestTable(string $name, array $relations = []): SliceSour
         );
     }
 
-    return new class($name, $relationGraph) implements SliceSource {
+    return new class($name, $relationGraph) implements SliceSource
+    {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,

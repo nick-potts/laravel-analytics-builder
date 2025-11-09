@@ -20,7 +20,8 @@ function createMockTable(string $name, array $relations = []): SliceSource
         );
     }
 
-    return new class($name, $relationGraph) implements SliceSource {
+    return new class($name, $relationGraph) implements SliceSource
+    {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
@@ -120,6 +121,7 @@ beforeEach(function () {
             'MockProduct' => $productsTable,
             default => throw new \Exception("Model not found: $modelClass"),
         };
+
         return SliceDefinition::fromSource($result);
     });
 

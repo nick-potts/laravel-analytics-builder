@@ -21,7 +21,8 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Slice
         );
     }
 
-    return new class($name, $relationGraph) implements SliceSource {
+    return new class($name, $relationGraph) implements SliceSource
+    {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
