@@ -1,9 +1,9 @@
 <?php
 
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
+use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Support\CompiledSchema;
 use NickPotts\Slice\Support\SliceDefinition;
-use NickPotts\Slice\Schemas\Relations\RelationGraph;
-use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 
 describe('CompiledSchema', function () {
     function createMockSchema(): CompiledSchema

@@ -1,9 +1,8 @@
 <?php
 
-use NickPotts\Slice\Support\SchemaProviderManager;
-use NickPotts\Slice\Support\SliceDefinition;
-use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
+use NickPotts\Slice\Schemas\Relations\RelationGraph;
+use NickPotts\Slice\Support\SchemaProviderManager;
 
 describe('SchemaProviderManager::schema()', function () {
     function createMockProvider(string $name, array $tables)
@@ -39,7 +38,7 @@ describe('SchemaProviderManager::schema()', function () {
     }
 
     it('compiles schema from single provider', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $customersTable = createMockTable('eloquent:customers', 'customers', 'eloquent', 'eloquent:mysql');
@@ -56,7 +55,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('compiles schema from multiple providers', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $eventsTable = createMockTable('manual:events', 'events', 'manual', 'manual:pgsql');
@@ -76,7 +75,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('handles ambiguous table names by removing bare name', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $eloquentOrders = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $manualOrders = createMockTable('manual:orders', 'orders', 'manual', 'manual:pgsql');
@@ -98,7 +97,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('prefers first provider for bare name in non-ambiguous case', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
 
@@ -113,7 +112,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('pre-computes relation graphs', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $relationGraph = new RelationGraph([]);
         $ordersTable = createMockTable(
@@ -135,7 +134,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('pre-computes dimension catalogs', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $dimensionCatalog = new DimensionCatalog([]);
         $ordersTable = createMockTable(
@@ -157,7 +156,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('builds connection index correctly', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $mysqlOrder = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $mysqlCustomer = createMockTable('eloquent:customers', 'customers', 'eloquent', 'eloquent:mysql');
@@ -184,7 +183,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('memoizes compilation result', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $provider = createMockProvider('eloquent', [$ordersTable]);
@@ -199,7 +198,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('can clear compiled schema', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $provider = createMockProvider('eloquent', [$ordersTable]);
@@ -215,7 +214,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('handles empty providers', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $schema = $manager->schema();
 
@@ -224,7 +223,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('includes all table metadata in compiled schema', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $provider = createMockProvider('eloquent', [$ordersTable]);
@@ -243,7 +242,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('parses metric sources using compiled schema', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = createMockTable('eloquent:orders', 'orders', 'eloquent', 'eloquent:mysql');
         $provider = createMockProvider('eloquent', [$ordersTable]);

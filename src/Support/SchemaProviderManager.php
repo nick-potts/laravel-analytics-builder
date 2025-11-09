@@ -349,7 +349,7 @@ class SchemaProviderManager
 
                 // Index by bare name (may have collisions)
                 // Strategy: first provider wins for bare name, others must use prefix
-                if (!isset($tablesByName[$name])) {
+                if (! isset($tablesByName[$name])) {
                     $tablesByName[$name] = $definition;
                 } else {
                     // Ambiguous - mark as unresolvable via bare name
@@ -365,7 +365,7 @@ class SchemaProviderManager
                 $dimensions[$identifier] = $table->dimensions();
 
                 // Build connection index: group tables by their connection
-                if (!isset($connectionIndex[$connection])) {
+                if (! isset($connectionIndex[$connection])) {
                     $connectionIndex[$connection] = [];
                 }
                 $connectionIndex[$connection][] = $identifier;
