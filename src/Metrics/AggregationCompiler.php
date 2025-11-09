@@ -8,31 +8,34 @@ use NickPotts\Slice\Metrics\Aggregations\Aggregation;
 class AggregationCompiler
 {
     /**
-     * Driver-specific compilers for aggregations
+     * Compilers for aggregations with optional default and driver-specific overrides
      *
      * Structure:
      * [
      *   'AggregationClassName' => [
-     *     'mysql' => fn($agg, $grammar) => "...",
-     *     'pgsql' => fn($agg, $grammar) => "...",
+     *     'default' => fn($agg, $grammar) => "...",
+     *     'mysql' => fn($agg, $grammar) => "...",  // optional driver override
+     *     'pgsql' => fn($agg, $grammar) => "...",  // optional driver override
      *   ]
      * ]
      */
     protected static array $compilers = [];
 
     /**
-     * Register aggregation compilers for specific drivers
+     * Register aggregation compilers with optional default and driver-specific overrides
      *
      * @param  class-string<Aggregation>  $aggregationClass
-     * @param  array<string, callable>  $driverCompilers  Map of driver => compiler function
+     * @param  array<string, callable>  $compilers  Map of 'default' and optional driver names => compiler functions
      */
-    public static function register(string $aggregationClass, array $driverCompilers): void
+    public static function register(string $aggregationClass, array $compilers): void
     {
-        static::$compilers[$aggregationClass] = $driverCompilers;
+        static::$compilers[$aggregationClass] = $compilers;
     }
 
     /**
      * Compile an aggregation to SQL using the given grammar
+     *
+     * Tries driver-specific compiler first, then falls back to default.
      */
     public static function compile(Aggregation $aggregation, Grammar $grammar): string
     {
@@ -47,40 +50,42 @@ class AggregationCompiler
             );
         }
 
-        $driverCompilers = static::$compilers[$aggregationClass];
+        $compilers = static::$compilers[$aggregationClass];
 
-        if (! isset($driverCompilers[$driver])) {
+        if (! isset($compilers['default'])) {
             $aggregationName = class_basename($aggregationClass);
-            $supportedDrivers = implode(', ', array_keys($driverCompilers));
             throw new \RuntimeException(
-                "Aggregation '{$aggregationName}' does not support driver '{$driver}'. "
-                ."Supported drivers: {$supportedDrivers}."
+                "Aggregation '{$aggregationName}' must define a 'default' compiler."
             );
         }
 
-        $compiler = $driverCompilers[$driver];
+        // Check for driver-specific override first, then fall back to default
+        $compiler = $compilers[$driver] ?? $compilers['default'];
 
         return $compiler($aggregation, $grammar);
     }
 
     /**
-     * Normalize driver name from Grammar class or actual connection driver
+     * Get driver name from Grammar class
+     *
+     * Driver name is derived from the Grammar class name by removing 'Grammar' suffix.
+     * Example: MySqlGrammar -> mysql, PostgresGrammar -> postgres
+     *
+     * When compiling, the system first checks for a driver-specific compiler,
+     * then falls back to the default compiler. This allows third-party packages
+     * to add driver-specific optimizations by registering driver overrides
+     * without requiring core aggregation classes to know about every driver.
+     *
+     * Example: A MongoDB package would do:
+     *   AggregationCompiler::register(Sum::class, [
+     *       'default' => [...],
+     *       'mongo' => fn($agg, $grammar) => 'sum(...)'
+     *   ]);
      */
     private static function normalizeDriverName(Grammar $grammar): string
     {
         $grammarClass = class_basename($grammar);
-        $driver = strtolower(str_replace('Grammar', '', $grammarClass));
-
-        // Map driver names to canonical names
-        if ($driver === 'sqlite') {
-            return 'sqlite';
-        } elseif (str_starts_with($driver, 'mysql') || $driver === 'mariadb') {
-            return 'mysql';
-        } elseif (str_starts_with($driver, 'postgres')) {
-            return 'pgsql';
-        }
-
-        return $driver;
+        return strtolower(str_replace('Grammar', '', $grammarClass));
     }
 
     /**

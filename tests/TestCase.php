@@ -38,9 +38,12 @@ class TestCase extends Orchestra
 
     protected function getPackageProviders($app)
     {
-        return [
+        $providers = [
             SliceServiceProvider::class,
+            \SingleStore\Laravel\SingleStoreProvider::class,
         ];
+
+        return $providers;
     }
 
     public function getEnvironmentSetUp($app)
