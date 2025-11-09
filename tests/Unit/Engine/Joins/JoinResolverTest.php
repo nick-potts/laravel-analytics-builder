@@ -36,7 +36,7 @@ function createResolverTestTable(string $name, array $relations = []): TableCont
 
         public function connection(): string
         {
-            return 'default';
+            return 'eloquent:default';
         }
 
         public function primaryKey(): PrimaryKeyDescriptor

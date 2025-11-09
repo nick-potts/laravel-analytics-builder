@@ -45,5 +45,5 @@ it('returns explicit connection', function () {
 it('falls back to table connection', function () {
     $table = new MockTableContract('orders', 'mysql');
     $source = new MetricSource($table, 'total');
-    expect($source->getConnection())->toBe('mysql');
+    expect($source->getConnection())->toBe('eloquent:mysql');
 });

@@ -40,7 +40,7 @@ class MockTableContract implements TableContract
 
     public function connection(): string
     {
-        return $this->connectionName;
+        return "eloquent:$this->connectionName";
     }
 
     public function primaryKey(): PrimaryKeyDescriptor

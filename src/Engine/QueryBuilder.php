@@ -3,7 +3,9 @@
 namespace NickPotts\Slice\Engine;
 
 use Illuminate\Database\ConnectionInterface;
+use NickPotts\Slice\Contracts\TableContract;
 use NickPotts\Slice\Engine\Joins\JoinResolver;
+use NickPotts\Slice\Metrics\Aggregations\Aggregation;
 use NickPotts\Slice\Support\MetricSource;
 use NickPotts\Slice\Support\SchemaProviderManager;
 
@@ -29,7 +31,7 @@ class QueryBuilder
     /**
      * Tables involved in the query (de-duped)
      *
-     * @var array<string, \Slice\Contracts\TableContract>
+     * @var array<string, TableContract>
      */
     private array $tables = [];
 
@@ -47,7 +49,7 @@ class QueryBuilder
     /**
      * Add normalized metrics to the query
      *
-     * @param  array<array{source: MetricSource, aggregation: \Slice\Metrics\Aggregations\Aggregation}>  $normalizedMetrics
+     * @param  array<array{source: MetricSource, aggregation: Aggregation}>  $normalizedMetrics
      */
     public function addMetrics(array $normalizedMetrics): self
     {
@@ -98,7 +100,6 @@ class QueryBuilder
             tables: $this->tables,
             metrics: $this->metrics,
             joinPlan: $joinPlan,
-            connection: $this->connection,
         );
     }
 
@@ -109,6 +110,15 @@ class QueryBuilder
     {
         $connectionName = $connectionName ?? $table->connection();
 
+        // NOTE: Connection string is namespaced (e.g., 'eloquent:default', 'clickhouse:default')
+        // For now, we resolve only Eloquent connections. HTTP/ClickHouse connections
+        // will be handled by executor/adapter layer in Phase 5+
+        if (str_starts_with($connectionName, 'eloquent:')) {
+            $actualConnection = explode(':', $connectionName, 2)[1];
+            return \DB::connection($actualConnection);
+        }
+
+        // Fallback for backward compatibility (shouldn't happen with new code)
         return \DB::connection($connectionName);
     }
 }

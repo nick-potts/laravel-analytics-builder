@@ -34,7 +34,7 @@ function createMockTable(string $name, array $relations = []): TableContract
 
         public function connection(): string
         {
-            return 'default';
+            return 'eloquent:default';
         }
 
         public function primaryKey(): PrimaryKeyDescriptor

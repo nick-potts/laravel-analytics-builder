@@ -35,7 +35,7 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
 
         public function connection(): string
         {
-            return 'default';
+            return 'eloquent:default';
         }
 
         public function primaryKey(): PrimaryKeyDescriptor

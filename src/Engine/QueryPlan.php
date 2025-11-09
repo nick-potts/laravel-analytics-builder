@@ -2,7 +2,6 @@
 
 namespace NickPotts\Slice\Engine;
 
-use Illuminate\Database\ConnectionInterface;
 use NickPotts\Slice\Engine\Joins\JoinPlan;
 use NickPotts\Slice\Support\MetricSource;
 
@@ -13,8 +12,10 @@ use NickPotts\Slice\Support\MetricSource;
  * - Primary table for GROUP BY
  * - Tables involved
  * - Metrics to select
- * - Connection to use
  * - Join plan to connect multiple tables
+ *
+ * Note: Connection information is stored in tables and will be resolved
+ * by the executor/adapter layer based on the driver type (eloquent:, clickhouse:, http:, etc.)
  */
 class QueryPlan
 {
@@ -23,7 +24,6 @@ class QueryPlan
         public array $tables,
         public array $metrics,
         public JoinPlan $joinPlan,
-        public ?ConnectionInterface $connection = null,
     ) {}
 
     /**

@@ -24,7 +24,8 @@ final class MetadataBackedTable implements TableContract
 
     public function connection(): string
     {
-        return $this->metadata->connection ?? 'default';
+        $connection = $this->metadata->connection ?? config('database.default', 'default');
+        return "eloquent:$connection";
     }
 
     public function primaryKey(): PrimaryKeyDescriptor
