@@ -85,6 +85,7 @@ class AggregationCompiler
     private static function normalizeDriverName(Grammar $grammar): string
     {
         $grammarClass = class_basename($grammar);
+
         return strtolower(str_replace('Grammar', '', $grammarClass));
     }
 
