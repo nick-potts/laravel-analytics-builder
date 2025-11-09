@@ -345,7 +345,7 @@ This design phase produced comprehensive documentation:
 ### Provider Priority Resolution
 
 ```php
-public function resolve(string $identifier): TableContract
+public function resolve(string $identifier): SliceSource
 {
     // 1. Explicit tables (highest priority)
     if (isset($this->explicitTables[$identifier])) {

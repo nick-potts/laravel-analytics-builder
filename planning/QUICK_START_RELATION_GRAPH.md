@@ -27,7 +27,7 @@
 4. **SchemaProvider Infrastructure** - Complete
    - EloquentSchemaProvider auto-discovers models
    - ModelMetadata serializes RelationGraph for caching
-   - TableContract.relations() exposes RelationGraph
+   - SliceSource.relations() exposes RelationGraph
 
 ### What's Missing (❌ Not Implemented)
 
@@ -65,7 +65,7 @@ RelationDescriptor {name, type, targetModel, keys}
   ↓
 RelationGraph (collected per table)
   ↓
-TableContract.relations() (exposed via interface)
+SliceSource.relations() (exposed via interface)
   ↓
 JoinResolver.buildJoinGraph(tables) ← NEEDS TO BE BUILT
   ↓ (returns join specifications)
@@ -129,7 +129,7 @@ enum RelationType: string
 | `src/Schemas/Relations/RelationGraph.php` | Relation container | ✅ Complete |
 | `src/Schemas/Relations/RelationDescriptor.php` | Relation metadata | ✅ Complete |
 | `src/Providers/Eloquent/Introspectors/Relations/RelationIntrospector.php` | Discovery | ✅ Complete |
-| `src/Contracts/TableContract.php` | Table interface | ✅ Complete |
+| `src/Contracts/SliceSource.php` | Table interface | ✅ Complete |
 | `src/Schemas/MetadataBackedTable.php` | Table wrapper | ✅ Complete |
 | `src/Engine/Resolvers/JoinResolver.php` | **MISSING** | ❌ Empty |
 

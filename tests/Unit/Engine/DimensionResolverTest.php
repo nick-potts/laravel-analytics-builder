@@ -1,39 +1,43 @@
 <?php
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\DimensionResolver;
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Dimensions\StringDimension;
 use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
-use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 
 /**
  * Create a mock table with dimensions
  */
-function createDimensionResolverTestTable(string $name, array $dimensions = []): TableContract
+function createDimensionResolverTestTable(string $name, array $dimensions = []): SliceSource
 {
     $catalog = new DimensionCatalog($dimensions);
 
-    return new class($name, $catalog) implements TableContract {
+    return new class($name, $catalog) implements SliceSource {
         public function __construct(
             private string $tableName,
             private DimensionCatalog $dimensionCatalog,
         ) {}
+
+        public function identifier(): string
+        {
+            return 'mock:'.$this->tableName;
+        }
 
         public function name(): string
         {
             return $this->tableName;
         }
 
-        public function connection(): string
+        public function provider(): string
         {
-            return 'default';
+            return 'mock';
         }
 
-        public function primaryKey(): PrimaryKeyDescriptor
+        public function connection(): string
         {
-            return new PrimaryKeyDescriptor(['id']);
+            return 'mock:default';
         }
 
         public function relations(): RelationGraph
@@ -44,6 +48,21 @@ function createDimensionResolverTestTable(string $name, array $dimensions = []):
         public function dimensions(): DimensionCatalog
         {
             return $this->dimensionCatalog;
+        }
+
+        public function sqlTable(): ?string
+        {
+            return $this->tableName;
+        }
+
+        public function sql(): ?string
+        {
+            return null;
+        }
+
+        public function meta(): array
+        {
+            return [];
         }
     };
 }

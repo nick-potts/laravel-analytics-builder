@@ -2,7 +2,7 @@
 
 namespace NickPotts\Slice\Engine\Joins;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Support\SchemaProviderManager;
 
 /**
@@ -27,14 +27,16 @@ final class JoinPathFinder
      * @return array<JoinSpecification>|null Ordered list of joins or null if no path
      */
     public function find(
-        TableContract $from,
-        TableContract $to,
+        SliceSource $from,
+        SliceSource $to,
     ): ?array {
         $fromName = $from->name();
         $toName = $to->name();
+        $fromIdentifier = $from->identifier();
+        $toIdentifier = $to->identifier();
 
         // Same table, no join needed
-        if ($fromName === $toName) {
+        if ($fromIdentifier === $toIdentifier) {
             return [];
         }
 
@@ -45,11 +47,12 @@ final class JoinPathFinder
 
         // BFS: queue items are [currentTable, pathSoFar]
         $queue = [[$from, []]];
-        $visited = [$fromName => true];
+        $visited = [$fromIdentifier => true];
 
         while (! empty($queue)) {
             [$currentTable, $path] = array_shift($queue);
             $currentName = $currentTable->name();
+            $currentIdentifier = $currentTable->identifier();
 
             // Explore all relations from current table
             foreach ($currentTable->relations()->all() as $relationName => $relation) {
@@ -61,6 +64,7 @@ final class JoinPathFinder
                 }
 
                 $targetName = $targetTable->name();
+                $targetIdentifier = $targetTable->identifier();
 
                 // Skip if on different connection
                 if (! $this->sameConnection($currentTable, $targetTable)) {
@@ -68,7 +72,7 @@ final class JoinPathFinder
                 }
 
                 // Skip if already visited (prevents cycles)
-                if (isset($visited[$targetName])) {
+                if (isset($visited[$targetIdentifier])) {
                     continue;
                 }
 
@@ -77,18 +81,20 @@ final class JoinPathFinder
                     fromTable: $currentName,
                     toTable: $targetName,
                     relation: $relation,
+                    fromIdentifier: $currentIdentifier,
+                    toIdentifier: $targetIdentifier,
                 );
 
                 // Add to path
                 $newPath = [...$path, $joinSpec];
 
                 // Found target!
-                if ($targetName === $toName) {
+                if ($targetIdentifier === $toIdentifier) {
                     return $newPath;
                 }
 
                 // Mark visited and enqueue for exploration
-                $visited[$targetName] = true;
+                $visited[$targetIdentifier] = true;
                 $queue[] = [$targetTable, $newPath];
             }
         }
@@ -103,7 +109,7 @@ final class JoinPathFinder
      * All tables must explicitly declare their connection (never null).
      * This prevents ambiguity about which database a table actually uses.
      */
-    private function sameConnection(TableContract $from, TableContract $to): bool
+    private function sameConnection(SliceSource $from, SliceSource $to): bool
     {
         return $from->connection() === $to->connection();
     }
@@ -111,7 +117,7 @@ final class JoinPathFinder
     /**
      * Resolve a target model class to its table via schema manager.
      */
-    private function resolveTargetTable(string $modelClass): ?TableContract
+    private function resolveTargetTable(string $modelClass): ?SliceSource
     {
         try {
             return $this->manager->resolve($modelClass);

@@ -3,7 +3,7 @@
 namespace NickPotts\Slice\Support;
 
 use NickPotts\Slice\Contracts\SchemaProvider;
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Exceptions\TableNotFoundException;
 use NickPotts\Slice\Support\Cache\SchemaCache;
 
@@ -65,7 +65,7 @@ class SchemaProviderManager
      * @throws TableNotFoundException If table not found in any provider
      * @throws AmbiguousTableException If table exists in multiple providers
      */
-    public function resolve(string $identifier): TableContract
+    public function resolve(string $identifier): SliceDefinition
     {
         $foundIn = [];
         $firstTable = null;
@@ -157,9 +157,9 @@ class SchemaProviderManager
         }
 
         return new MetricSource(
-            table: $table,
-            column: $column,
-            connection: $connectionName ?? $table->connection()
+            $table,
+            $column,
+            $connectionName
         );
     }
 
@@ -171,7 +171,7 @@ class SchemaProviderManager
      * - 'orders' (if only one provider has it)
      * - 'eloquent:orders' and 'clickhouse:orders' (if multiple have it)
      *
-     * @return array<string, TableContract>
+     * @return array<string, SliceSource>
      */
     public function allTables(): array
     {
@@ -260,12 +260,12 @@ class SchemaProviderManager
     /**
      * Helper to resolve a table from a specific provider.
      */
-    private function resolveFromProvider(SchemaProvider $provider, string $identifier): TableContract
+    private function resolveFromProvider(SchemaProvider $provider, string $identifier): SliceDefinition
     {
         try {
             $source = $provider->resolveMetricSource($identifier.'.id');
 
-            return $source->table;
+            return $source->slice;
         } catch (\Throwable $e) {
             throw new TableNotFoundException(
                 "Provider '{$provider->name()}' could not resolve table '{$identifier}': ".$e->getMessage()

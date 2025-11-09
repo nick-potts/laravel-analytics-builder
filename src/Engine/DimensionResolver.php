@@ -2,7 +2,7 @@
 
 namespace NickPotts\Slice\Engine;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Schemas\Dimensions\Dimension;
 use NickPotts\Slice\Schemas\Dimensions\TimeDimension;
 
@@ -19,7 +19,7 @@ final class DimensionResolver
      *
      * Returns a mapping of table name => dimension instance from that table's catalog.
      *
-     * @param  array<TableContract>  $tables
+     * @param  array<SliceSource>  $tables
      * @return array<string, Dimension>  Keyed by table name
      */
     public function resolveDimension(
@@ -47,8 +47,11 @@ final class DimensionResolver
      * Check if a catalog dimension matches the requested dimension.
      *
      * Matches if:
-     * - Dimension key is the class name of the requested dimension
-     * - Catalog dimension is an instance of the requested dimension class
+     * - Dimension key is the class name AND names match
+     * - Catalog dimension is same instance of requested dimension class AND names match
+     *
+     * For class-keyed dimensions, both instance check and name comparison ensure
+     * we only match the exact dimension requested (e.g., 'status' != 'country').
      */
     private function matches(
         string $catalogKey,
@@ -57,9 +60,14 @@ final class DimensionResolver
     ): bool {
         $requestedClass = $requestedDimension::class;
 
-        // Direct class match
-        if ($catalogKey === $requestedClass || $catalogDimension instanceof $requestedClass) {
-            return true;
+        // Direct class match: key is the class name AND names match
+        if ($catalogKey === $requestedClass) {
+            return $catalogDimension->name() === $requestedDimension->name();
+        }
+
+        // Instance match: catalog dim is instance of requested class AND names match
+        if ($catalogDimension instanceof $requestedClass) {
+            return $catalogDimension->name() === $requestedDimension->name();
         }
 
         return false;

@@ -69,7 +69,7 @@
 
 **Context & Guardrails**
 - `src/Engine/QueryBuilder.php` and its legacy adapters were removed, so this phase delivers a net-new provider-native query pipeline rather than a refactor.  
-- All runtime surfaces (metrics, dimensions, filters, joins, aggregations) must speak only in terms of `SchemaProviderManager`, `MetricSource`, `TableContract`, and provider metadata (`RelationGraph`, `DimensionCatalog`, `PrimaryKeyDescriptor`).  
+- All runtime surfaces (metrics, dimensions, filters, joins, aggregations) must speak only in terms of `SchemaProviderManager`, `MetricSource`, `SliceSource`, and provider metadata (`RelationGraph`, `DimensionCatalog`, `PrimaryKeyDescriptor`).  
 - The rebuilt engine must leave stable seams for Phase 4 (base-table heuristics) and Phase 5 (relation chain filters) so we avoid another churn cycle once those phases begin.
 
 **Sequenced Workstreams**

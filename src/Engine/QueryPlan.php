@@ -2,6 +2,7 @@
 
 namespace NickPotts\Slice\Engine;
 
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinPlan;
 use NickPotts\Slice\Support\MetricSource;
 
@@ -20,7 +21,7 @@ use NickPotts\Slice\Support\MetricSource;
 class QueryPlan
 {
     public function __construct(
-        public \NickPotts\Slice\Contracts\TableContract $primaryTable,
+        public SliceSource $primaryTable,
         public array $tables,
         public array $metrics,
         public JoinPlan $joinPlan,
@@ -41,7 +42,12 @@ class QueryPlan
      */
     public function getTableNames(): array
     {
-        return array_keys($this->tables);
+        $names = array_map(
+            fn (SliceSource $table) => $table->name(),
+            $this->tables
+        );
+
+        return array_values($names);
     }
 
     /**

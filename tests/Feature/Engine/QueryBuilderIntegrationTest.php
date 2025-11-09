@@ -44,5 +44,5 @@ it('resolves correct table from provider', function () {
     $normalized = \NickPotts\Slice\Slice::normalizeMetrics($aggregations);
 
     expect($normalized[0]['source']->tableName())->toBe('orders');
-    expect($normalized[0]['source']->table)->not->toBeNull();
+    expect($normalized[0]['source']->slice)->not->toBeNull();
 });

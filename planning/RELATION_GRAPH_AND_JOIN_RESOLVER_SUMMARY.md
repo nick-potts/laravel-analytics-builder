@@ -244,12 +244,12 @@ See `/Users/nick/dev/laravel-analytics-builder/tests/Unit/Providers/Eloquent/Int
 ## Part 4: Integration into Table Contracts
 
 ### File Location
-`/Users/nick/dev/laravel-analytics-builder/src/Contracts/TableContract.php`
+`/Users/nick/dev/laravel-analytics-builder/src/Contracts/SliceSource.php`
 
 ### Interface Definition
 
 ```php
-interface TableContract
+interface SliceSource
 {
     public function name(): string;              // 'orders', 'customers'
     public function connection(): ?string;       // 'mysql', 'pgsql'
@@ -264,7 +264,7 @@ interface TableContract
 All Eloquent-based tables are wrapped in `MetadataBackedTable`, which stores the `RelationGraph`:
 
 ```php
-final class MetadataBackedTable implements TableContract
+final class MetadataBackedTable implements SliceSource
 {
     public function __construct(private readonly ModelMetadata $metadata) {}
     
@@ -547,7 +547,7 @@ Slice::query()
    - RelationGraph serialization/deserialization working
 
 5. **Table Integration** - Fully wired
-   - File: `/Users/nick/dev/laravel-analytics-builder/src/Contracts/TableContract.php`
+   - File: `/Users/nick/dev/laravel-analytics-builder/src/Contracts/SliceSource.php`
    - MetadataBackedTable exposes relations()
    - Works with SchemaProviderManager
 
@@ -587,7 +587,7 @@ Slice::query()
 | `src/Schemas/Relations/RelationGraph.php` | 99 | Relation container | ✅ Complete |
 | `src/Schemas/Relations/RelationDescriptor.php` | 73 | Relation metadata | ✅ Complete |
 | `src/Providers/Eloquent/Introspectors/Relations/RelationIntrospector.php` | 267 | Source code parsing | ✅ Complete |
-| `src/Contracts/TableContract.php` | 56 | Table interface | ✅ Complete |
+| `src/Contracts/SliceSource.php` | 56 | Table interface | ✅ Complete |
 | `src/Schemas/MetadataBackedTable.php` | 79 | Table implementation | ✅ Complete |
 | `src/Schemas/ModelMetadata.php` | 134 | Metadata serialization | ✅ Complete |
 | `src/Support/SchemaProviderManager.php` | TBD | Provider resolution | ✅ Complete |
@@ -628,7 +628,7 @@ File: `/Users/nick/dev/laravel-analytics-builder/src/Engine/Resolvers/JoinResolv
 **Dependencies:**
 - `RelationGraph` - From table's relations()
 - `RelationDescriptor` - Individual relation metadata
-- `TableContract` - Tables to join
+- `SliceSource` - Tables to join
 - `Illuminate\Database\Query\Builder` - Laravel query builder
 
 **Constructor:**
@@ -645,8 +645,8 @@ class JoinResolver
 
 ```php
 public function findJoinPath(
-    TableContract $from,
-    TableContract $to,
+    SliceSource $from,
+    SliceSource $to,
     array $allTables
 ): ?array {
     // BFS implementation
@@ -871,7 +871,7 @@ $duration = microtime(true) - $startTime;
                      │
         ┌────────────▼──────────────────────────┐
         │  SchemaProviderManager.resolve()      │
-        │  (Get TableContract for each table)   │
+        │  (Get SliceSource for each table)   │
         └────────────┬──────────────────────────┘
                      │ [OrdersTable, OrderItemsTable, CustomersTable]
         ┌────────────▼──────────────────────────┐
@@ -922,7 +922,7 @@ $duration = microtime(true) - $startTime;
 
 namespace NickPotts\Slice\Engine\Resolvers;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use NickPotts\Slice\Support\SchemaProviderManager;
@@ -938,8 +938,8 @@ final class JoinResolver
      * Find shortest path from one table to another via BFS
      */
     public function findJoinPath(
-        TableContract $from,
-        TableContract $to,
+        SliceSource $from,
+        SliceSource $to,
         array $allTables
     ): ?array {
         // BFS implementation
@@ -967,8 +967,8 @@ final class JoinResolver
      */
     private function resolveTargetTable(
         RelationDescriptor $relation
-    ): ?TableContract {
-        // Use SchemaProviderManager to resolve model class to TableContract
+    ): ?SliceSource {
+        // Use SchemaProviderManager to resolve model class to SliceSource
     }
 }
 ```
@@ -991,7 +991,7 @@ $resolver = app(JoinResolver::class);
 - ✅ RelationGraph - Container for relations
 - ✅ RelationDescriptor - Individual relation metadata
 - ✅ RelationIntrospector - Discovers relations from source code
-- ✅ TableContract.relations() - Access to RelationGraph
+- ✅ SliceSource.relations() - Access to RelationGraph
 - ✅ ModelMetadata serialization - Caching support
 
 **What's Missing:**

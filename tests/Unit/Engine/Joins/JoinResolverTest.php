@@ -1,19 +1,19 @@
 <?php
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinGraphBuilder;
 use NickPotts\Slice\Engine\Joins\JoinPathFinder;
 use NickPotts\Slice\Engine\Joins\JoinResolver;
-use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Support\SliceDefinition;
 
 /**
  * Create a mock table with relations
  */
-function createResolverTestTable(string $name, array $relations = []): TableContract
+function createResolverTestTable(string $name, array $relations = []): SliceSource
 {
     $relationGraph = new RelationGraph;
     foreach ($relations as $relationName => $descriptor) {
@@ -22,26 +22,30 @@ function createResolverTestTable(string $name, array $relations = []): TableCont
         );
     }
 
-    return new class($name, $relationGraph) implements TableContract
-    {
+    return new class($name, $relationGraph) implements SliceSource {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
         ) {}
+
+        public function identifier(): string
+        {
+            return 'mock:'.$this->tableName;
+        }
 
         public function name(): string
         {
             return $this->tableName;
         }
 
+        public function provider(): string
+        {
+            return 'mock';
+        }
+
         public function connection(): string
         {
             return 'eloquent:default';
-        }
-
-        public function primaryKey(): PrimaryKeyDescriptor
-        {
-            return new PrimaryKeyDescriptor(['id']);
         }
 
         public function relations(): RelationGraph
@@ -52,6 +56,21 @@ function createResolverTestTable(string $name, array $relations = []): TableCont
         public function dimensions(): \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog
         {
             return new \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
+        }
+
+        public function sqlTable(): ?string
+        {
+            return $this->tableName;
+        }
+
+        public function sql(): ?string
+        {
+            return null;
+        }
+
+        public function meta(): array
+        {
+            return [];
         }
     };
 }
@@ -71,13 +90,18 @@ beforeEach(function () {
 
     $this->customersTable = createResolverTestTable('customers');
 
+    $ordersTable = $this->ordersTable;
+    $customersTable = $this->customersTable;
+
     // Mock the manager
-    $manager->allows('resolve')->andReturnUsing(function ($modelClass) {
-        return match ($modelClass) {
-            'MockOrder' => $this->ordersTable,
-            'MockCustomer' => $this->customersTable,
+    $manager->allows('resolve')->andReturnUsing(function ($modelClass) use ($ordersTable, $customersTable) {
+        $result = match ($modelClass) {
+            'MockOrder' => $ordersTable,
+            'MockCustomer' => $customersTable,
             default => throw new \Exception("Model not found: $modelClass"),
         };
+
+        return SliceDefinition::fromSource($result);
     });
 
     $pathFinder = new JoinPathFinder($manager);

@@ -2,36 +2,58 @@
 
 namespace NickPotts\Slice\Support;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 
 /**
  * Value object representing a resolved metric source.
  *
  * Created when a provider resolves a metric reference like 'orders.total'.
- * Contains the resolved table, column name, and database connection.
+ * Contains the resolved slice definition, column name, and connection override.
  */
 final class MetricSource
 {
-    public function __construct(
-        public readonly TableContract $table,
-        public readonly string $column,
-        public readonly ?string $connection = null,
-    ) {}
+    public readonly SliceDefinition $slice;
 
     /**
-     * Get the fully qualified metric key (table.column).
+     * @deprecated Use $slice instead.
      */
-    public function key(): string
-    {
-        return $this->table->name().'.'.$this->column;
+    public readonly SliceDefinition $table;
+
+    public function __construct(
+        SliceSource $slice,
+        public readonly string $column,
+        public readonly ?string $connection = null,
+    ) {
+        $definition = $slice instanceof SliceDefinition
+            ? $slice
+            : SliceDefinition::fromSource($slice);
+
+        $this->slice = $definition;
+        $this->table = $definition;
     }
 
     /**
-     * Get the table name.
+     * Get the fully qualified metric key (slice.identifier + column).
+     */
+    public function key(): string
+    {
+        return $this->slice->identifier().'.'.$this->column;
+    }
+
+    /**
+     * Get the slice/table name.
      */
     public function tableName(): string
     {
-        return $this->table->name();
+        return $this->slice->name();
+    }
+
+    /**
+     * Convenience accessor for the slice identifier.
+     */
+    public function sliceIdentifier(): string
+    {
+        return $this->slice->identifier();
     }
 
     /**
@@ -43,10 +65,10 @@ final class MetricSource
     }
 
     /**
-     * Get the database connection (or table's default).
+     * Get the database connection (override or slice default).
      */
-    public function getConnection(): ?string
+    public function getConnection(): string
     {
-        return $this->connection ?? $this->table->connection();
+        return $this->connection ?? $this->slice->connection();
     }
 }

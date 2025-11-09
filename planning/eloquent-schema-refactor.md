@@ -46,7 +46,7 @@ flowchart LR
         CK[ClickHouseProvider?]
     end
     Providers --> SPM[SchemaProviderManager]
-    SPM --> TABCON[TableContract Registry]
+    SPM --> TABCON[SliceSource Registry]
     Slice --> SPM
     Slice --> QB
     QB --> BTR[BaseTableResolver]
@@ -60,7 +60,7 @@ Highlights:
   ClickHouse schemas all implement it.
 - `SchemaProviderManager` orchestrates providers. Resolution order: explicitly registered tables → provider overrides →
   provider priority order.
-- `TableContract` replaces the current abstract `Table`. Manual tables wrap existing behaviour; providers emit contract
+- `SliceSource` replaces the current abstract `Table`. Manual tables wrap existing behaviour; providers emit contract
   instances from metadata.
 - Metrics parse their sources through a `MetricSourceParser`, which asks the manager for the owning provider/table.
 - Base-table resolution, relation walking, and dimension inference rely on provider-supplied metadata, not hand-authored
@@ -74,7 +74,7 @@ Highlights:
 interface SchemaProvider
 {
     public function boot(SchemaCache $cache): void;
-    public function tables(): iterable; // yields TableContract
+    public function tables(): iterable; // yields SliceSource
     public function provides(string $identifier): bool;
     public function resolveMetricSource(string $reference): MetricSource;
     public function relations(string $table): RelationGraph;
@@ -91,7 +91,7 @@ interface SchemaProvider
 
 1. **ManualTableProvider** – wraps existing `Table` subclasses for backward compatibility.
 2. **EloquentSchemaProvider** – scans configured model namespaces, reflects relations/casts/scopes, and emits
-   metadata-backed `TableContract`s.
+   metadata-backed `SliceSource`s.
 3. **ConfigProvider (optional)** – reads schema definitions from config arrays for simple/static sources.
 
 Third parties can publish packages such as `slice-clickhouse-provider` implementing the same interface. The
@@ -104,7 +104,7 @@ join/dimension engine remains agnostic to the provider origin.
     1. Ask ManualTableProvider if it owns the table (preserves legacy behaviour).
     2. Walk configured providers (`EloquentSchemaProvider`, etc.) until one returns metadata.
     3. If ambiguous (same table on two connections), throw instructive exception asking for explicit qualifier.
-- Parser returns `(TableContract $table, string $column, string $connection)` consumed by aggregations and QueryBuilder.
+- Parser returns `(SliceSource $table, string $column, string $connection)` consumed by aggregations and QueryBuilder.
 
 ## 5. Eloquent Schema Discovery
 
@@ -157,7 +157,7 @@ Graph powers JoinResolver and BaseTableResolver without manual tables.
 ### 6.1 Table Contract Adoption
 
 ```php
-interface TableContract {
+interface SliceSource {
     public function name(): string;
     public function connection(): ?string;
     public function relations(): RelationGraph;
@@ -168,7 +168,7 @@ interface TableContract {
 
 - `ManualTable` implements the interface by delegating to legacy `Table`.
 - `MetadataBackedTable` wraps provider metadata.
-- Registry stores `TableContract` instances regardless of origin.
+- Registry stores `SliceSource` instances regardless of origin.
 
 ### 6.2 Base Table Resolver
 
@@ -201,7 +201,7 @@ interface TableContract {
 |-------|--------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
 | 1     | Schema Provider Manager + manual provider  | Contracts, manager, manual adapter                  | Unit tests for manager ordering & manual provider                             | Minimal                                                                                  |
 | 2     | Eloquent provider & caching                | Metadata scanner, cache file, artisan commands      | Scanner unit tests (relations, casts, polymorph), cache invalidation tests    | Reflection hitting heavy model boot logic—mitigate via `newInstanceWithoutConstructor()` |
-| 3     | TableContract adoption & metric parser     | Replace abstract `Table`, update registry/metrics   | Regression tests for manual tables + new metadata tables                      | Touches many files—gated by feature flag                                                 |
+| 3     | SliceSource adoption & metric parser     | Replace abstract `Table`, update registry/metrics   | Regression tests for manual tables + new metadata tables                      | Touches many files—gated by feature flag                                                 |
 | 4     | Dimension catalog + heuristics             | Dimension inference, config overrides               | Tests covering cast/name heuristics, manual override merging                  | False positives; ship opt-out per column                                                 |
 | 5     | Base table resolver & grain-aware planning | Scoring, metric grain options, updated QueryBuilder | Integration tests (single table, parent/child, multi-table) across DB drivers | Aggregation double counting—prototype with fixtures                                      |
 | 6     | Relation path walker + filter DSL          | Multi-hop joins, `whereRelation` APIs               | Feature tests for where clauses across relations, morph/pivot cases           | Query explosions; add planner diagnostics                                                |

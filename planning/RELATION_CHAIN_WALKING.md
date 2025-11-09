@@ -70,11 +70,11 @@ class RelationChainParser {
     /**
      * Resolve relation chain to tables.
      *
-     * @param TableContract $startTable Starting table
+     * @param SliceSource $startTable Starting table
      * @param array $relationChain Relation names
-     * @return array{tables: TableContract[], column: string}
+     * @return array{tables: SliceSource[], column: string}
      */
-    public function resolve(TableContract $startTable, array $relationChain, string $column): array {
+    public function resolve(SliceSource $startTable, array $relationChain, string $column): array {
         $tables = [$startTable];
         $currentTable = $startTable;
 
@@ -123,7 +123,7 @@ class RelationChainFilter {
      */
     public function apply(
         QueryAdapter $query,
-        TableContract $baseTable,
+        SliceSource $baseTable,
         string $chainNotation,
         string $operator,
         mixed $value
@@ -154,7 +154,7 @@ class RelationChainFilter {
      */
     public function applyIn(
         QueryAdapter $query,
-        TableContract $baseTable,
+        SliceSource $baseTable,
         string $chainNotation,
         array $values
     ): void {

@@ -106,7 +106,7 @@ User → SchemaProviderManager → [Manual, Eloquent, ClickHouse, Custom] → Qu
 │  Parses: 'orders.total', 'connection:table.col', Model::class  │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │ Asks SchemaProviderManager: "Who provides 'orders'?"    │  │
-│  │ Returns: (TableContract, column, connection)            │  │
+│  │ Returns: (SliceSource, column, connection)            │  │
 │  └──────────────────────────────────────────────────────────┘  │
 └────────────────────────────┬────────────────────────────────────┘
                              ↓
@@ -132,7 +132,7 @@ User → SchemaProviderManager → [Manual, Eloquent, ClickHouse, Custom] → Qu
 ┌─────────────────────────────────────────────────────────────────┐
 │                     TABLE CONTRACT LAYER                        │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │ TableContract (interface)                                │  │
+│  │ SliceSource (interface)                                │  │
 │  │ - name(): string                                         │  │
 │  │ - connection(): ?string                                  │  │
 │  │ - relations(): RelationGraph                             │  │
@@ -170,11 +170,11 @@ User → SchemaProviderManager → [Manual, Eloquent, ClickHouse, Custom] → Qu
 3. SchemaProviderManager resolves 'orders':
    - Checks ManualTableProvider: "Do you provide 'orders'?" → No
    - Checks EloquentSchemaProvider: "Do you provide 'orders'?" → Yes (Order model)
-   - Returns: TableContract instance
+   - Returns: SliceSource instance
    ↓
-4. MetricSourceParser returns: (TableContract, 'total', 'mysql')
+4. MetricSourceParser returns: (SliceSource, 'total', 'mysql')
    ↓
-5. QueryBuilder consumes TableContract:
+5. QueryBuilder consumes SliceSource:
    - relations() → Auto-join setup
    - dimensions() → Dimension resolution
    - primaryKey() → Base table detection
@@ -201,7 +201,7 @@ interface SchemaProvider
     /**
      * Get all tables this provider can supply.
      *
-     * @return iterable<TableContract>
+     * @return iterable<SliceSource>
      */
     public function tables(): iterable;
 
@@ -287,7 +287,7 @@ class SchemaProviderManager
     /** @var array<SchemaProvider> */
     protected array $providers = [];
 
-    /** @var array<string, TableContract> Explicitly registered tables */
+    /** @var array<string, SliceSource> Explicitly registered tables */
     protected array $explicitTables = [];
 
     /** @var array<string, SchemaProvider> Override provider per table */
@@ -311,7 +311,7 @@ class SchemaProviderManager
     /**
      * Register an explicit table (highest priority).
      */
-    public function registerTable(TableContract $table): void
+    public function registerTable(SliceSource $table): void
     {
         $this->explicitTables[$table->name()] = $table;
     }
@@ -333,7 +333,7 @@ class SchemaProviderManager
      * 3. Registered providers (by priority)
      * 4. Throw exception
      */
-    public function resolve(string $identifier): TableContract
+    public function resolve(string $identifier): SliceSource
     {
         // 1. Explicit tables
         if (isset($this->explicitTables[$identifier])) {
@@ -416,7 +416,7 @@ class SchemaProviderManager
         return $tables;
     }
 
-    protected function resolveFromProvider(SchemaProvider $provider, string $identifier): TableContract
+    protected function resolveFromProvider(SchemaProvider $provider, string $identifier): SliceSource
     {
         $source = $provider->resolveMetricSource($identifier . '.id'); // Dummy column
         return $source->table();
@@ -432,7 +432,7 @@ namespace NickPotts\Slice\Support;
 class MetricSource
 {
     public function __construct(
-        public readonly TableContract $table,
+        public readonly SliceSource $table,
         public readonly string $column,
         public readonly ?string $connection = null,
     ) {}
@@ -1142,7 +1142,7 @@ class ClickHouseProvider implements CachableSchemaProvider
    - Ensure 100% backward compatibility
    - Tests with existing workbench tables
 
-4. **Create TableContract** (1 day)
+4. **Create SliceSource** (1 day)
    - Define interface
    - Create `ManualTableAdapter` (wraps old Table)
    - Create `MetadataBackedTable` (wraps provider metadata)
@@ -1200,7 +1200,7 @@ class ClickHouseProvider implements CachableSchemaProvider
    - Maintain backward compat with existing metrics
 
 2. **Update QueryBuilder** (2 days)
-   - Accept `TableContract` instead of `Table`
+   - Accept `SliceSource` instead of `Table`
    - Update all engine components (JoinResolver, DimensionResolver)
    - Tests ensuring both manual and Eloquent tables work
 
@@ -1711,7 +1711,7 @@ class OpenAPIProvider implements SchemaProvider
     protected function parseOpenAPISchema(array $schema): void
     {
         foreach ($schema['components']['schemas'] as $name => $definition) {
-            // Build TableContract from OpenAPI schema
+            // Build SliceSource from OpenAPI schema
             $this->tables[$name] = new MetadataBackedTable(
                 new TableMetadata(
                     name: $name,
@@ -2170,7 +2170,7 @@ class MyCustomProvider implements SchemaProvider
 
     public function tables(): iterable
     {
-        // Yield TableContract instances for all tables
+        // Yield SliceSource instances for all tables
     }
 
     public function provides(string $identifier): bool

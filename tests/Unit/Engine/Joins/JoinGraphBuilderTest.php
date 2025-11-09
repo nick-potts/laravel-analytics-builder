@@ -1,18 +1,18 @@
 <?php
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinGraphBuilder;
 use NickPotts\Slice\Engine\Joins\JoinPathFinder;
-use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Support\SliceDefinition;
 
 /**
  * Create a mock table with relations
  */
-function createGraphBuilderTestTable(string $name, array $relations = []): TableContract
+function createGraphBuilderTestTable(string $name, array $relations = []): SliceSource
 {
     $relationGraph = new RelationGraph;
     foreach ($relations as $relationName => $descriptor) {
@@ -21,26 +21,30 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
         );
     }
 
-    return new class($name, $relationGraph) implements TableContract
-    {
+    return new class($name, $relationGraph) implements SliceSource {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
         ) {}
+
+        public function identifier(): string
+        {
+            return 'mock:'.$this->tableName;
+        }
 
         public function name(): string
         {
             return $this->tableName;
         }
 
+        public function provider(): string
+        {
+            return 'mock';
+        }
+
         public function connection(): string
         {
             return 'eloquent:default';
-        }
-
-        public function primaryKey(): PrimaryKeyDescriptor
-        {
-            return new PrimaryKeyDescriptor(['id']);
         }
 
         public function relations(): RelationGraph
@@ -51,6 +55,21 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
         public function dimensions(): \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog
         {
             return new \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
+        }
+
+        public function sqlTable(): ?string
+        {
+            return $this->tableName;
+        }
+
+        public function sql(): ?string
+        {
+            return null;
+        }
+
+        public function meta(): array
+        {
+            return [];
         }
     };
 }
@@ -87,15 +106,22 @@ beforeEach(function () {
 
     $this->productsTable = createGraphBuilderTestTable('products');
 
+    $ordersTable = $this->ordersTable;
+    $customersTable = $this->customersTable;
+    $orderItemsTable = $this->orderItemsTable;
+    $productsTable = $this->productsTable;
+
     // Mock the manager
-    $manager->allows('resolve')->andReturnUsing(function ($modelClass) {
-        return match ($modelClass) {
-            'MockOrder' => $this->ordersTable,
-            'MockCustomer' => $this->customersTable,
-            'MockOrderItem' => $this->orderItemsTable,
-            'MockProduct' => $this->productsTable,
+    $manager->allows('resolve')->andReturnUsing(function ($modelClass) use ($ordersTable, $customersTable, $orderItemsTable, $productsTable) {
+        $result = match ($modelClass) {
+            'MockOrder' => $ordersTable,
+            'MockCustomer' => $customersTable,
+            'MockOrderItem' => $orderItemsTable,
+            'MockProduct' => $productsTable,
             default => throw new \Exception("Model not found: $modelClass"),
         };
+
+        return SliceDefinition::fromSource($result);
     });
 
     $this->pathFinder = new JoinPathFinder($manager);
