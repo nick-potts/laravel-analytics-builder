@@ -1,5 +1,6 @@
 <?php
 
+use NickPotts\Slice\Engine\Joins\JoinPlan;
 use NickPotts\Slice\Engine\QueryPlan;
 use NickPotts\Slice\Tests\Support\MockTableContract;
 
@@ -9,6 +10,7 @@ it('stores primary table', function () {
         primaryTable: $table,
         tables: ['orders' => $table],
         metrics: [],
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->primaryTable)->toBe($table);
@@ -20,6 +22,7 @@ it('returns primary table name', function () {
         primaryTable: $table,
         tables: ['orders' => $table],
         metrics: [],
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->getPrimaryTableName())->toBe('orders');
@@ -36,6 +39,7 @@ it('returns all table names', function () {
             'customers' => $customers,
         ],
         metrics: [],
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->getTableNames())->toBe(['orders', 'customers']);
@@ -49,7 +53,22 @@ it('returns metrics', function () {
         primaryTable: $table,
         tables: ['orders' => $table],
         metrics: ['sum_orders_total' => $source],
+        joinPlan: new JoinPlan,
     );
 
     expect($plan->getMetrics())->toBe(['sum_orders_total' => $source]);
+});
+
+it('stores join plan', function () {
+    $table = new MockTableContract('orders');
+    $joinPlan = new JoinPlan;
+
+    $plan = new QueryPlan(
+        primaryTable: $table,
+        tables: ['orders' => $table],
+        metrics: [],
+        joinPlan: $joinPlan,
+    );
+
+    expect($plan->joinPlan)->toBe($joinPlan);
 });

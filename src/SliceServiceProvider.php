@@ -22,6 +22,31 @@ class SliceServiceProvider extends PackageServiceProvider
             return new \NickPotts\Slice\Support\SchemaProviderManager;
         });
 
+        $this->app->singleton(\NickPotts\Slice\Engine\Joins\JoinPathFinder::class, function ($app) {
+            return new \NickPotts\Slice\Engine\Joins\JoinPathFinder(
+                $app->make('slice.schema-provider-manager')
+            );
+        });
+
+        $this->app->singleton(\NickPotts\Slice\Engine\Joins\JoinGraphBuilder::class, function ($app) {
+            return new \NickPotts\Slice\Engine\Joins\JoinGraphBuilder(
+                $app->make(\NickPotts\Slice\Engine\Joins\JoinPathFinder::class)
+            );
+        });
+
+        $this->app->singleton(\NickPotts\Slice\Engine\Joins\JoinResolver::class, function ($app) {
+            return new \NickPotts\Slice\Engine\Joins\JoinResolver(
+                $app->make(\NickPotts\Slice\Engine\Joins\JoinGraphBuilder::class)
+            );
+        });
+
+        $this->app->singleton(\NickPotts\Slice\Engine\QueryBuilder::class, function ($app) {
+            return new \NickPotts\Slice\Engine\QueryBuilder(
+                $app->make('slice.schema-provider-manager'),
+                $app->make(\NickPotts\Slice\Engine\Joins\JoinResolver::class)
+            );
+        });
+
         $this->app->singleton('slice', function ($app) {
             return new \NickPotts\Slice\SliceManager($app->make('slice.schema-provider-manager'));
         });
