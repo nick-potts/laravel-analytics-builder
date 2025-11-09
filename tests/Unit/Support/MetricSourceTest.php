@@ -30,8 +30,8 @@ it('gets column name', function () {
     expect($source->columnName())->toBe('total');
 });
 
-it('falls back to table connection', function () {
+it('gets connection from table', function () {
     $table = new MockSliceSource('orders', 'eloquent:mysql');
     $source = new MetricSource($table, 'total');
-    expect($source->getConnection())->toBe('eloquent:mysql');
+    expect($source->slice->connection())->toBe('eloquent:mysql');
 });

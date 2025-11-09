@@ -109,9 +109,9 @@ it('detects provider prefix vs connection prefix', function () {
     $provider->registerTable($table)->setName('eloquent');
     $manager->register($provider);
 
-    // 'analytics' is not a provider, so it's a connection prefix
+    // 'analytics' is not a provider, so it's ignored (metric has no connection override)
     $source = $manager->parseMetricSource('analytics:orders.total');
-    expect($source->getConnection())->toBe('analytics');
+    expect($source->slice->connection())->toBe('eloquent:mysql');
     expect($source->tableName())->toBe('orders');
 });
 

@@ -158,8 +158,7 @@ class SchemaProviderManager
 
         return new MetricSource(
             $table,
-            $column,
-            $connectionName
+            $column
         );
     }
 

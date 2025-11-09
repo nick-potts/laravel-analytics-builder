@@ -37,8 +37,7 @@ class MockSchemaProvider implements SchemaProvider
 
         return new MetricSource(
             $this->tables[$tableName],
-            $column,
-            null
+            $column
         );
     }
 

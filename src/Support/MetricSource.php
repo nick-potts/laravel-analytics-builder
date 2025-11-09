@@ -8,28 +8,21 @@ use NickPotts\Slice\Contracts\SliceSource;
  * Value object representing a resolved metric source.
  *
  * Created when a provider resolves a metric reference like 'orders.total'.
- * Contains the resolved slice definition, column name, and connection override.
+ * Contains the resolved slice definition and column name.
  */
 final class MetricSource
 {
     public readonly SliceDefinition $slice;
 
-    /**
-     * @deprecated Use $slice instead.
-     */
-    public readonly SliceDefinition $table;
-
     public function __construct(
         SliceSource $slice,
         public readonly string $column,
-        public readonly ?string $connection = null,
     ) {
         $definition = $slice instanceof SliceDefinition
             ? $slice
             : SliceDefinition::fromSource($slice);
 
         $this->slice = $definition;
-        $this->table = $definition;
     }
 
     /**
@@ -62,13 +55,5 @@ final class MetricSource
     public function columnName(): string
     {
         return $this->column;
-    }
-
-    /**
-     * Get the database connection (override or slice default).
-     */
-    public function getConnection(): string
-    {
-        return $this->connection ?? $this->slice->connection();
     }
 }

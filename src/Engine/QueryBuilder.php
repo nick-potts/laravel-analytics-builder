@@ -60,7 +60,7 @@ class QueryBuilder
 
             // Extract table and validate connection consistency
             $slice = $source->slice;
-            $resolvedConnection = $source->getConnection();
+            $resolvedConnection = $slice->connection();
 
             $sliceKey = $slice->identifier();
             $isNewTable = ! isset($this->tables[$sliceKey]);
