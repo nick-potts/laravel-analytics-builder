@@ -14,9 +14,9 @@ class Sum extends Aggregation
     public static function registerCompilers(): void
     {
         AggregationCompiler::register(self::class, [
-            'mysql' => fn($agg, $grammar) => 'SUM(' . $grammar->wrap($agg->getReference()) . ') AS ' . $grammar->wrap($agg->getAlias()),
-            'pgsql' => fn($agg, $grammar) => 'SUM(' . $grammar->wrap($agg->getReference()) . ') AS ' . $grammar->wrap($agg->getAlias()),
-            'sqlite' => fn($agg, $grammar) => 'SUM(' . $grammar->wrap($agg->getReference()) . ') AS ' . $grammar->wrap($agg->getAlias()),
+            'mysql' => fn ($agg, $grammar) => 'SUM('.$grammar->wrap($agg->getReference()).') AS '.$grammar->wrap($agg->getAlias()),
+            'pgsql' => fn ($agg, $grammar) => 'SUM('.$grammar->wrap($agg->getReference()).') AS '.$grammar->wrap($agg->getAlias()),
+            'sqlite' => fn ($agg, $grammar) => 'SUM('.$grammar->wrap($agg->getReference()).') AS '.$grammar->wrap($agg->getAlias()),
         ]);
     }
 }

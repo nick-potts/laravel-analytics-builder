@@ -1,7 +1,7 @@
 <?php
 
-use NickPotts\Slice\Metrics\Aggregations\Sum;
 use NickPotts\Slice\Metrics\Aggregations\Count;
+use NickPotts\Slice\Metrics\Aggregations\Sum;
 use NickPotts\Slice\Providers\Eloquent\EloquentSchemaProvider;
 use Workbench\App\Models\Order;
 

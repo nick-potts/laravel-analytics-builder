@@ -23,8 +23,8 @@ class AggregationCompiler
     /**
      * Register aggregation compilers for specific drivers
      *
-     * @param class-string<Aggregation> $aggregationClass
-     * @param array<string, callable> $driverCompilers Map of driver => compiler function
+     * @param  class-string<Aggregation>  $aggregationClass
+     * @param  array<string, callable>  $driverCompilers  Map of driver => compiler function
      */
     public static function register(string $aggregationClass, array $driverCompilers): void
     {
@@ -59,6 +59,7 @@ class AggregationCompiler
         }
 
         $compiler = $driverCompilers[$driver];
+
         return $compiler($aggregation, $grammar);
     }
 
