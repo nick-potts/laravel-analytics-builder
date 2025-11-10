@@ -42,6 +42,7 @@ final class SliceDefinition implements SliceSource
     public function identifier(): string
     {
         $connectionPart = $this->connection ?? 'null';
+
         return $this->provider.':'.$connectionPart.':'.$this->name;
     }
 

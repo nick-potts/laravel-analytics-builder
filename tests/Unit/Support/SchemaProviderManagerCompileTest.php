@@ -1,12 +1,11 @@
 <?php
 
-use NickPotts\Slice\Support\SchemaProviderManager;
-use NickPotts\Slice\Support\SliceDefinition;
-use NickPotts\Slice\Schemas\Relations\RelationGraph;
-use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Contracts\SchemaProvider;
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
+use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Support\Cache\SchemaCache;
 use NickPotts\Slice\Support\MetricSource;
+use NickPotts\Slice\Support\SchemaProviderManager;
 use NickPotts\Slice\Tests\Factories\MockTableFactory;
 
 describe('SchemaProviderManager::schema()', function () {
@@ -36,6 +35,7 @@ describe('SchemaProviderManager::schema()', function () {
                         return true;
                     }
                 }
+
                 return false;
             }
 
@@ -51,6 +51,7 @@ describe('SchemaProviderManager::schema()', function () {
                         return $source->relations();
                     }
                 }
+
                 return new RelationGraph([]);
             }
 
@@ -61,6 +62,7 @@ describe('SchemaProviderManager::schema()', function () {
                         return $source->dimensions();
                     }
                 }
+
                 return new DimensionCatalog([]);
             }
 
@@ -72,7 +74,7 @@ describe('SchemaProviderManager::schema()', function () {
     }
 
     it('compiles schema from single provider', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $customersTable = MockTableFactory::create('customers')->provider('eloquent')->connection('mysql')->build();
@@ -89,7 +91,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('compiles schema from multiple providers', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $eventsTable = MockTableFactory::create('events')->provider('manual')->connection('pgsql')->build();
@@ -109,7 +111,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('handles ambiguous table names by removing bare name', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $eloquentOrders = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $manualOrders = MockTableFactory::create('orders')->provider('manual')->connection('pgsql')->build();
@@ -131,7 +133,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('prefers first provider for bare name in non-ambiguous case', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
 
@@ -146,7 +148,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('pre-computes relation graphs', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $relationGraph = new RelationGraph([]);
         $ordersTable = MockTableFactory::create('orders')
@@ -166,7 +168,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('pre-computes dimension catalogs', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $dimensionCatalog = new DimensionCatalog([]);
         $ordersTable = MockTableFactory::create('orders')
@@ -186,7 +188,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('builds connection index correctly', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $mysqlOrder = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $mysqlCustomer = MockTableFactory::create('customers')->provider('eloquent')->connection('mysql')->build();
@@ -213,7 +215,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('memoizes compilation result', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $provider = createMockProvider('eloquent', [$ordersTable]);
@@ -228,7 +230,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('can clear compiled schema', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $provider = createMockProvider('eloquent', [$ordersTable]);
@@ -244,7 +246,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('handles empty providers', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $schema = $manager->schema();
 
@@ -253,7 +255,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('includes all table metadata in compiled schema', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $provider = createMockProvider('eloquent', [$ordersTable]);
@@ -272,7 +274,7 @@ describe('SchemaProviderManager::schema()', function () {
     });
 
     it('parses metric sources using compiled schema', function () {
-        $manager = new SchemaProviderManager();
+        $manager = new SchemaProviderManager;
 
         $ordersTable = MockTableFactory::create('orders')->provider('eloquent')->connection('mysql')->build();
         $provider = createMockProvider('eloquent', [$ordersTable]);

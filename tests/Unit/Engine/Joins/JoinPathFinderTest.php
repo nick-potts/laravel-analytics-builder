@@ -1,11 +1,11 @@
 <?php
 
 use NickPotts\Slice\Engine\Joins\JoinPathFinder;
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use NickPotts\Slice\Support\CompiledSchema;
 use NickPotts\Slice\Support\SliceDefinition;
-use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Tests\Factories\MockTableFactory;
 
 beforeEach(function () {

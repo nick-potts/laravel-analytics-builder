@@ -3,12 +3,12 @@
 use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinGraphBuilder;
 use NickPotts\Slice\Engine\Joins\JoinPathFinder;
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Relations\RelationType;
 use NickPotts\Slice\Support\CompiledSchema;
 use NickPotts\Slice\Support\SliceDefinition;
-use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 
 /**
  * Create a mock table with relations

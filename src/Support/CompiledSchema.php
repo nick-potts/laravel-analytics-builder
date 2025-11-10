@@ -174,7 +174,7 @@ final class CompiledSchema
      * Example: getTablesOnConnection('eloquent:mysql') or getTablesOnConnection('eloquent:null')
      * Returns empty array if connection not found.
      *
-     * @param string $connectionKey Provider:connection format (e.g., 'eloquent:mysql', 'eloquent:null')
+     * @param  string  $connectionKey  Provider:connection format (e.g., 'eloquent:mysql', 'eloquent:null')
      * @return array<string> Array of table identifiers
      */
     public function getTablesOnConnection(string $connectionKey): array

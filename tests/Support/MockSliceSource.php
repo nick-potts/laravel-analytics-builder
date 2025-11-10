@@ -47,6 +47,7 @@ class MockSliceSource implements SliceSource
     public function identifier(): string
     {
         $connectionPart = $this->connectionName ?? 'null';
+
         return "{$this->providerName}:{$connectionPart}:{$this->tableName}";
     }
 

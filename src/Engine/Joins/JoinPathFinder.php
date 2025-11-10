@@ -117,5 +117,4 @@ final class JoinPathFinder
         return $from->provider() === $to->provider()
             && $from->connection() === $to->connection();
     }
-
 }
