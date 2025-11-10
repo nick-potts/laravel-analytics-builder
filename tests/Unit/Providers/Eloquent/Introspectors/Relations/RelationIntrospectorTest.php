@@ -14,7 +14,7 @@ it('detects belongs to relations', function () {
     expect($graph->has('order'))->toBeTrue();
     $order = $graph->get('order');
     expect($order->type)->toBe(RelationType::BelongsTo);
-    expect($order->targetModel)->toBe(Order::class);
+    expect($order->targetTableIdentifier)->toBe(Order::class);
 });
 
 it('detects has many relations', function () {
@@ -26,7 +26,7 @@ it('detects has many relations', function () {
     expect($graph->has('items'))->toBeTrue();
     $items = $graph->get('items');
     expect($items->type)->toBe(RelationType::HasMany);
-    expect($items->targetModel)->toBe(OrderItem::class);
+    expect($items->targetTableIdentifier)->toBe(OrderItem::class);
 });
 
 it('returns empty graph for model without relations', function () {
