@@ -31,7 +31,7 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Slice
 
         public function identifier(): string
         {
-            return 'mock:'.$this->tableName;
+            return 'mock:null:'.$this->tableName;
         }
 
         public function name(): string
@@ -44,9 +44,9 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Slice
             return 'mock';
         }
 
-        public function connection(): string
+        public function connection(): ?string
         {
-            return 'eloquent:default';
+            return null;
         }
 
         public function relations(): RelationGraph
@@ -82,13 +82,13 @@ beforeEach(function () {
         'customer' => new RelationDescriptor(
             name: 'customer',
             type: RelationType::BelongsTo,
-            targetTableIdentifier: 'mock:customers',
+            targetTableIdentifier: 'mock:null:customers',
             keys: ['foreign' => 'customer_id', 'owner' => 'id'],
         ),
         'items' => new RelationDescriptor(
             name: 'items',
             type: RelationType::HasMany,
-            targetTableIdentifier: 'mock:order_items',
+            targetTableIdentifier: 'mock:null:order_items',
             keys: ['local' => 'id', 'foreign' => 'order_id'],
         ),
     ]);
@@ -99,7 +99,7 @@ beforeEach(function () {
         'order' => new RelationDescriptor(
             name: 'order',
             type: RelationType::BelongsTo,
-            targetTableIdentifier: 'mock:orders',
+            targetTableIdentifier: 'mock:null:orders',
             keys: ['foreign' => 'order_id', 'owner' => 'id'],
         ),
     ]);
@@ -109,10 +109,10 @@ beforeEach(function () {
     // Create compiled schema with mock tables
     $this->schema = new CompiledSchema(
         tablesByIdentifier: [
-            'mock:orders' => SliceDefinition::fromSource($this->ordersTable),
-            'mock:customers' => SliceDefinition::fromSource($this->customersTable),
-            'mock:order_items' => SliceDefinition::fromSource($this->orderItemsTable),
-            'mock:products' => SliceDefinition::fromSource($this->productsTable),
+            'mock:null:orders' => SliceDefinition::fromSource($this->ordersTable),
+            'mock:null:customers' => SliceDefinition::fromSource($this->customersTable),
+            'mock:null:order_items' => SliceDefinition::fromSource($this->orderItemsTable),
+            'mock:null:products' => SliceDefinition::fromSource($this->productsTable),
         ],
         tablesByName: [
             'orders' => SliceDefinition::fromSource($this->ordersTable),
@@ -121,29 +121,29 @@ beforeEach(function () {
             'products' => SliceDefinition::fromSource($this->productsTable),
         ],
         tableProviders: [
-            'mock:orders' => 'mock',
-            'mock:customers' => 'mock',
-            'mock:order_items' => 'mock',
-            'mock:products' => 'mock',
+            'mock:null:orders' => 'mock',
+            'mock:null:customers' => 'mock',
+            'mock:null:order_items' => 'mock',
+            'mock:null:products' => 'mock',
         ],
         relations: [
-            'mock:orders' => $this->ordersTable->relations(),
-            'mock:customers' => $this->customersTable->relations(),
-            'mock:order_items' => $this->orderItemsTable->relations(),
-            'mock:products' => $this->productsTable->relations(),
+            'mock:null:orders' => $this->ordersTable->relations(),
+            'mock:null:customers' => $this->customersTable->relations(),
+            'mock:null:order_items' => $this->orderItemsTable->relations(),
+            'mock:null:products' => $this->productsTable->relations(),
         ],
         dimensions: [
-            'mock:orders' => new DimensionCatalog,
-            'mock:customers' => new DimensionCatalog,
-            'mock:order_items' => new DimensionCatalog,
-            'mock:products' => new DimensionCatalog,
+            'mock:null:orders' => new DimensionCatalog,
+            'mock:null:customers' => new DimensionCatalog,
+            'mock:null:order_items' => new DimensionCatalog,
+            'mock:null:products' => new DimensionCatalog,
         ],
         connectionIndex: [
-            'eloquent:default' => [
-                'mock:orders',
-                'mock:customers',
-                'mock:order_items',
-                'mock:products',
+            'mock:null' => [
+                'mock:null:orders',
+                'mock:null:customers',
+                'mock:null:order_items',
+                'mock:null:products',
             ],
         ],
     );

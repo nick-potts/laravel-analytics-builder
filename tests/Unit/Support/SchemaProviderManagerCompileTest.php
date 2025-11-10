@@ -82,8 +82,8 @@ describe('SchemaProviderManager::schema()', function () {
 
         $schema = $manager->schema();
 
-        expect($schema->hasTable('eloquent:orders'))->toBeTrue();
-        expect($schema->hasTable('eloquent:customers'))->toBeTrue();
+        expect($schema->hasTable('eloquent:mysql:orders'))->toBeTrue();
+        expect($schema->hasTable('eloquent:mysql:customers'))->toBeTrue();
         expect($schema->hasTable('orders'))->toBeTrue();
         expect($schema->hasTable('customers'))->toBeTrue();
     });
@@ -102,8 +102,8 @@ describe('SchemaProviderManager::schema()', function () {
 
         $schema = $manager->schema();
 
-        expect($schema->hasTable('eloquent:orders'))->toBeTrue();
-        expect($schema->hasTable('manual:events'))->toBeTrue();
+        expect($schema->hasTable('eloquent:mysql:orders'))->toBeTrue();
+        expect($schema->hasTable('manual:pgsql:events'))->toBeTrue();
         expect($schema->hasTable('orders'))->toBeTrue();
         expect($schema->hasTable('events'))->toBeTrue();
     });
@@ -123,8 +123,8 @@ describe('SchemaProviderManager::schema()', function () {
         $schema = $manager->schema();
 
         // Both prefixed versions should exist
-        expect($schema->hasTable('eloquent:orders'))->toBeTrue();
-        expect($schema->hasTable('manual:orders'))->toBeTrue();
+        expect($schema->hasTable('eloquent:mysql:orders'))->toBeTrue();
+        expect($schema->hasTable('manual:pgsql:orders'))->toBeTrue();
 
         // Bare name should be removed (ambiguous)
         expect($schema->hasTable('orders'))->toBeFalse();
@@ -161,7 +161,7 @@ describe('SchemaProviderManager::schema()', function () {
         $schema = $manager->schema();
 
         // Relations should be pre-fetched and available
-        $relations = $schema->getRelations('eloquent:orders');
+        $relations = $schema->getRelations('eloquent:mysql:orders');
         expect($relations)->toBe($relationGraph);
     });
 
@@ -181,7 +181,7 @@ describe('SchemaProviderManager::schema()', function () {
         $schema = $manager->schema();
 
         // Dimensions should be pre-fetched and available
-        $dimensions = $schema->getDimensions('eloquent:orders');
+        $dimensions = $schema->getDimensions('eloquent:mysql:orders');
         expect($dimensions)->toBe($dimensionCatalog);
     });
 
@@ -203,13 +203,13 @@ describe('SchemaProviderManager::schema()', function () {
         // MySQL connection should have 2 tables
         $mysqlTables = $schema->getTablesOnConnection('eloquent:mysql');
         expect($mysqlTables)->toHaveCount(2);
-        expect($mysqlTables)->toContain('eloquent:orders');
-        expect($mysqlTables)->toContain('eloquent:customers');
+        expect($mysqlTables)->toContain('eloquent:mysql:orders');
+        expect($mysqlTables)->toContain('eloquent:mysql:customers');
 
         // PostgreSQL connection should have 1 table
         $pgsqlTables = $schema->getTablesOnConnection('manual:pgsql');
         expect($pgsqlTables)->toHaveCount(1);
-        expect($pgsqlTables)->toContain('manual:events');
+        expect($pgsqlTables)->toContain('manual:pgsql:events');
     });
 
     it('memoizes compilation result', function () {

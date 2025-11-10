@@ -103,7 +103,7 @@ it('resolves dimensions across multiple tables with relations', function () {
         'customer' => new RelationDescriptor(
             name: 'customer',
             type: RelationType::BelongsTo,
-            targetModel: 'Workbench\App\Models\Customer',
+            targetTableIdentifier: 'manual:null:customers',
             keys: ['foreign' => 'customer_id', 'owner' => 'id'],
         ),
     ]);

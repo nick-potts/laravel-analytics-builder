@@ -75,7 +75,12 @@ class MockTableFactory
             }
         }
 
-        $identifier = $this->identifier ?? ($this->provider . ':' . $this->name);
+        if (!$this->identifier) {
+            $connectionPart = $this->connection ?? 'null';
+            $identifier = $this->provider . ':' . $connectionPart . ':' . $this->name;
+        } else {
+            $identifier = $this->identifier;
+        }
         $dimensions = $this->dimensions ?? new DimensionCatalog;
 
         return new class(
