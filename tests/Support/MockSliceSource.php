@@ -8,11 +8,9 @@ use NickPotts\Slice\Schemas\Relations\RelationGraph;
 
 class MockSliceSource implements SliceSource
 {
-    private string $identifier;
-
     private string $providerName;
 
-    private string $connectionName;
+    private ?string $connectionName;
 
     private string $tableName;
 
@@ -28,7 +26,7 @@ class MockSliceSource implements SliceSource
 
     public function __construct(
         string $tableName,
-        string $connection = 'eloquent:default',
+        ?string $connection = null,
         ?RelationGraph $relations = null,
         ?DimensionCatalog $dimensions = null,
         string $provider = 'eloquent',
@@ -39,7 +37,6 @@ class MockSliceSource implements SliceSource
         $this->tableName = $tableName;
         $this->providerName = $provider;
         $this->connectionName = $connection;
-        $this->identifier = "{$this->providerName}:{$this->tableName}";
         $this->sqlTable = $sqlTable ?? $tableName;
         $this->sql = $sql;
         $this->relations = $relations ?? new RelationGraph;
@@ -49,7 +46,8 @@ class MockSliceSource implements SliceSource
 
     public function identifier(): string
     {
-        return $this->identifier;
+        $connectionPart = $this->connectionName ?? 'null';
+        return "{$this->providerName}:{$connectionPart}:{$this->tableName}";
     }
 
     public function name(): string
@@ -62,7 +60,7 @@ class MockSliceSource implements SliceSource
         return $this->providerName;
     }
 
-    public function connection(): string
+    public function connection(): ?string
     {
         return $this->connectionName;
     }

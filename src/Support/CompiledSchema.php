@@ -61,9 +61,10 @@ final class CompiledSchema
     private readonly array $dimensions;
 
     /**
-     * Connection index mapping connection names to tables on that connection.
+     * Connection index mapping provider:connection to tables on that connection.
      * Used for connection validation and queries.
-     * Example: 'mysql' => ['eloquent:orders', 'eloquent:customers']
+     * Example: 'eloquent:mysql' => ['eloquent:orders', 'eloquent:customers']
+     *          'eloquent:null' => ['eloquent:users'] (using default connection)
      *
      * @var array<string, array<string>>
      */
@@ -169,15 +170,17 @@ final class CompiledSchema
     }
 
     /**
-     * Get all table identifiers on a specific connection.
+     * Get all table identifiers on a specific provider connection.
      *
+     * Example: getTablesOnConnection('eloquent:mysql') or getTablesOnConnection('eloquent:null')
      * Returns empty array if connection not found.
      *
+     * @param string $connectionKey Provider:connection format (e.g., 'eloquent:mysql', 'eloquent:null')
      * @return array<string> Array of table identifiers
      */
-    public function getTablesOnConnection(string $connection): array
+    public function getTablesOnConnection(string $connectionKey): array
     {
-        return $this->connectionIndex[$connection] ?? [];
+        return $this->connectionIndex[$connectionKey] ?? [];
     }
 
     /**
@@ -258,19 +261,23 @@ final class CompiledSchema
     }
 
     /**
-     * Get all unique connections used by tables matching a filter.
+     * Get all unique provider connections used by tables matching a filter.
      *
      * Useful for validating that queries only use single connection.
+     * Returns provider:connection composite keys.
      *
      * @param  array<MetricSource>  $metrics
-     * @return array<string> Array of unique connection names
+     * @return array<string> Array of unique provider:connection keys
      */
     public function getConnectionsForMetrics(array $metrics): array
     {
         $connections = [];
         foreach ($metrics as $metric) {
+            $provider = $metric->slice->provider();
             $connection = $metric->slice->connection();
-            $connections[$connection] = true;
+            // Build composite key: provider:connection
+            $key = $connection === null ? "$provider:null" : "$provider:$connection";
+            $connections[$key] = true;
         }
 
         return array_keys($connections);

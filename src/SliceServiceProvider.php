@@ -24,7 +24,7 @@ class SliceServiceProvider extends PackageServiceProvider
 
         $this->app->singleton(\NickPotts\Slice\Engine\Joins\JoinPathFinder::class, function ($app) {
             return new \NickPotts\Slice\Engine\Joins\JoinPathFinder(
-                $app->make('slice.schema-provider-manager')
+                $app->make(\NickPotts\Slice\Support\CompiledSchema::class)
             );
         });
 
@@ -56,6 +56,7 @@ class SliceServiceProvider extends PackageServiceProvider
     {
         $this->registerAggregations();
         $this->registerEloquentProvider();
+        $this->registerCompiledSchema();
         $this->registerFacadeAlias();
     }
 
@@ -75,5 +76,19 @@ class SliceServiceProvider extends PackageServiceProvider
     {
         $manager = $this->app->make('slice.schema-provider-manager');
         $manager->register(new \NickPotts\Slice\Providers\Eloquent\EloquentSchemaProvider);
+    }
+
+    private function registerCompiledSchema(): void
+    {
+        $this->app->singleton('slice.compiled-schema', function ($app) {
+            $manager = $app->make('slice.schema-provider-manager');
+
+            return $manager->schema();
+        });
+
+        // Also register as the type-hinted class for direct injection
+        $this->app->singleton(\NickPotts\Slice\Support\CompiledSchema::class, function ($app) {
+            return $app->make('slice.compiled-schema');
+        });
     }
 }

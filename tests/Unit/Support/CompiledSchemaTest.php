@@ -10,7 +10,6 @@ describe('CompiledSchema', function () {
     {
         // Create mock tables with relations and dimensions
         $ordersTable = new SliceDefinition(
-            identifier: 'eloquent:orders',
             name: 'orders',
             provider: 'eloquent',
             connection: 'mysql',
@@ -22,7 +21,6 @@ describe('CompiledSchema', function () {
         );
 
         $customersTable = new SliceDefinition(
-            identifier: 'eloquent:customers',
             name: 'customers',
             provider: 'eloquent',
             connection: 'mysql',
@@ -34,7 +32,6 @@ describe('CompiledSchema', function () {
         );
 
         $productsTable = new SliceDefinition(
-            identifier: 'manual:products',
             name: 'products',
             provider: 'manual',
             connection: 'pgsql',
@@ -81,10 +78,10 @@ describe('CompiledSchema', function () {
     describe('resolveTable', function () {
         it('resolves table by full identifier', function () {
             $schema = createMockSchema();
-            $table = $schema->resolveTable('eloquent:orders');
+            $table = $schema->resolveTable('eloquent:mysql:orders');
 
             expect($table)->not->toBeNull();
-            expect($table->identifier())->toBe('eloquent:orders');
+            expect($table->identifier())->toBe('eloquent:mysql:orders');
             expect($table->name())->toBe('orders');
         });
 
@@ -93,7 +90,7 @@ describe('CompiledSchema', function () {
             $table = $schema->resolveTable('orders');
 
             expect($table)->not->toBeNull();
-            expect($table->identifier())->toBe('eloquent:orders');
+            expect($table->identifier())->toBe('eloquent:mysql:orders');
         });
 
         it('returns null for non-existent table', function () {
@@ -106,9 +103,9 @@ describe('CompiledSchema', function () {
         it('prefers full identifier over bare name', function () {
             $schema = createMockSchema();
             // When querying with full identifier, should return that exact one
-            $table = $schema->resolveTable('eloquent:orders');
+            $table = $schema->resolveTable('eloquent:mysql:orders');
 
-            expect($table->identifier())->toBe('eloquent:orders');
+            expect($table->identifier())->toBe('eloquent:mysql:orders');
         });
     });
 
@@ -223,15 +220,15 @@ describe('CompiledSchema', function () {
             $schema = createMockSchema();
             $metricSource = $schema->parseMetricSource('orders.total');
 
-            expect($metricSource->sliceIdentifier())->toBe('eloquent:orders');
+            expect($metricSource->sliceIdentifier())->toBe('eloquent:mysql:orders');
             expect($metricSource->columnName())->toBe('total');
         });
 
         it('parses metric reference with provider prefix', function () {
             $schema = createMockSchema();
-            $metricSource = $schema->parseMetricSource('eloquent:orders.total');
+            $metricSource = $schema->parseMetricSource('eloquent:mysql:orders.total');
 
-            expect($metricSource->sliceIdentifier())->toBe('eloquent:orders');
+            expect($metricSource->sliceIdentifier())->toBe('eloquent:mysql:orders');
             expect($metricSource->columnName())->toBe('total');
         });
 
@@ -295,7 +292,7 @@ describe('CompiledSchema', function () {
             $connections = $schema->getConnectionsForMetrics($metrics);
 
             expect($connections)->toHaveCount(1);
-            expect($connections)->toContain('mysql');
+            expect($connections)->toContain('eloquent:mysql');
         });
 
         it('returns multiple connections if metrics span them', function () {
@@ -308,8 +305,8 @@ describe('CompiledSchema', function () {
             $connections = $schema->getConnectionsForMetrics($metrics);
 
             expect($connections)->toHaveCount(2);
-            expect($connections)->toContain('mysql');
-            expect($connections)->toContain('pgsql');
+            expect($connections)->toContain('eloquent:mysql');
+            expect($connections)->toContain('manual:pgsql');
         });
 
         it('handles empty metrics array', function () {

@@ -15,10 +15,9 @@ use NickPotts\Slice\Schemas\Relations\RelationGraph;
 final class SliceDefinition implements SliceSource
 {
     public function __construct(
-        private readonly string $identifier,
         private readonly string $name,
         private readonly string $provider,
-        private readonly string $connection,
+        private readonly ?string $connection,
         private readonly ?string $sqlTable,
         private readonly ?string $sql,
         private readonly RelationGraph $relations,
@@ -29,7 +28,6 @@ final class SliceDefinition implements SliceSource
     public static function fromSource(SliceSource $source): self
     {
         return new self(
-            identifier: $source->identifier(),
             name: $source->name(),
             provider: $source->provider(),
             connection: $source->connection(),
@@ -43,7 +41,8 @@ final class SliceDefinition implements SliceSource
 
     public function identifier(): string
     {
-        return $this->identifier;
+        $connectionPart = $this->connection ?? 'null';
+        return $this->provider.':'.$connectionPart.':'.$this->name;
     }
 
     public function name(): string
@@ -56,7 +55,7 @@ final class SliceDefinition implements SliceSource
         return $this->provider;
     }
 
-    public function connection(): string
+    public function connection(): ?string
     {
         return $this->connection;
     }

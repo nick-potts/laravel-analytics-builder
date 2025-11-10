@@ -15,7 +15,9 @@
       "Bash(/tmp/JoinResolver.php)",
       "Bash(/tmp/DimensionResolver.php)",
       "Bash(./vendor/bin/pest:*)",
-      "WebFetch(domain:cube.dev)"
+      "WebFetch(domain:cube.dev)",
+      "WebSearch",
+      "WebFetch(domain:filamentphp.com)"
     ],
     "deny": [],
     "ask": []

@@ -7,8 +7,9 @@ use NickPotts\Slice\Engine\Joins\JoinResolver;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Relations\RelationType;
-use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Support\CompiledSchema;
 use NickPotts\Slice\Support\SliceDefinition;
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 
 /**
  * Create a mock table with relations
@@ -77,35 +78,49 @@ function createResolverTestTable(string $name, array $relations = []): SliceSour
 }
 
 beforeEach(function () {
-    $manager = \Mockery::mock(SchemaProviderManager::class);
-
     // Create mock tables
     $this->ordersTable = createResolverTestTable('orders', [
         'customer' => new RelationDescriptor(
             name: 'customer',
             type: RelationType::BelongsTo,
-            targetModel: 'MockCustomer',
+            targetTableIdentifier: 'mock:customers',
             keys: ['foreign' => 'customer_id', 'owner' => 'id'],
         ),
     ]);
 
     $this->customersTable = createResolverTestTable('customers');
 
-    $ordersTable = $this->ordersTable;
-    $customersTable = $this->customersTable;
+    // Create compiled schema with mock tables
+    $this->schema = new CompiledSchema(
+        tablesByIdentifier: [
+            'mock:orders' => SliceDefinition::fromSource($this->ordersTable),
+            'mock:customers' => SliceDefinition::fromSource($this->customersTable),
+        ],
+        tablesByName: [
+            'orders' => SliceDefinition::fromSource($this->ordersTable),
+            'customers' => SliceDefinition::fromSource($this->customersTable),
+        ],
+        tableProviders: [
+            'mock:orders' => 'mock',
+            'mock:customers' => 'mock',
+        ],
+        relations: [
+            'mock:orders' => $this->ordersTable->relations(),
+            'mock:customers' => $this->customersTable->relations(),
+        ],
+        dimensions: [
+            'mock:orders' => new DimensionCatalog,
+            'mock:customers' => new DimensionCatalog,
+        ],
+        connectionIndex: [
+            'eloquent:default' => [
+                'mock:orders',
+                'mock:customers',
+            ],
+        ],
+    );
 
-    // Mock the manager
-    $manager->allows('resolve')->andReturnUsing(function ($modelClass) use ($ordersTable, $customersTable) {
-        $result = match ($modelClass) {
-            'MockOrder' => $ordersTable,
-            'MockCustomer' => $customersTable,
-            default => throw new \Exception("Model not found: $modelClass"),
-        };
-
-        return SliceDefinition::fromSource($result);
-    });
-
-    $pathFinder = new JoinPathFinder($manager);
+    $pathFinder = new JoinPathFinder($this->schema);
     $graphBuilder = new JoinGraphBuilder($pathFinder);
     $this->resolver = new JoinResolver($graphBuilder);
 });

@@ -1,131 +1,86 @@
 <?php
 
-use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinPathFinder;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
-use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Relations\RelationType;
-use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Support\CompiledSchema;
 use NickPotts\Slice\Support\SliceDefinition;
-
-/**
- * Create a mock table with relations
- */
-function createMockTable(string $name, array $relations = []): SliceSource
-{
-    $relationGraph = new RelationGraph;
-    foreach ($relations as $relationName => $descriptor) {
-        $relationGraph = new RelationGraph(
-            array_merge($relationGraph->all(), [$relationName => $descriptor])
-        );
-    }
-
-    return new class($name, $relationGraph) implements SliceSource
-    {
-        public function __construct(
-            private string $tableName,
-            private RelationGraph $relations,
-        ) {}
-
-        public function identifier(): string
-        {
-            return 'mock:'.$this->tableName;
-        }
-
-        public function name(): string
-        {
-            return $this->tableName;
-        }
-
-        public function provider(): string
-        {
-            return 'mock';
-        }
-
-        public function connection(): string
-        {
-            return 'eloquent:default';
-        }
-
-        public function relations(): RelationGraph
-        {
-            return $this->relations;
-        }
-
-        public function dimensions(): \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog
-        {
-            return new \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
-        }
-
-        public function sqlTable(): ?string
-        {
-            return $this->tableName;
-        }
-
-        public function sql(): ?string
-        {
-            return null;
-        }
-
-        public function meta(): array
-        {
-            return [];
-        }
-    };
-}
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
+use NickPotts\Slice\Tests\Factories\MockTableFactory;
 
 beforeEach(function () {
-    $this->manager = new SchemaProviderManager;
-
     // Create mock tables
-    $this->ordersTable = createMockTable('orders', [
+    $this->ordersTable = MockTableFactory::create('orders')->relations([
         'customer' => new RelationDescriptor(
             name: 'customer',
             type: RelationType::BelongsTo,
-            targetModel: 'MockCustomer',
+            targetTableIdentifier: 'mock:customers',
             keys: ['foreign' => 'customer_id', 'owner' => 'id'],
         ),
         'items' => new RelationDescriptor(
             name: 'items',
             type: RelationType::HasMany,
-            targetModel: 'MockOrderItem',
+            targetTableIdentifier: 'mock:order_items',
             keys: ['local' => 'id', 'foreign' => 'order_id'],
         ),
-    ]);
+    ])->build();
 
-    $this->customersTable = createMockTable('customers');
+    $this->customersTable = MockTableFactory::create('customers')->build();
 
-    $this->orderItemsTable = createMockTable('order_items', [
+    $this->orderItemsTable = MockTableFactory::create('order_items')->relations([
         'order' => new RelationDescriptor(
             name: 'order',
             type: RelationType::BelongsTo,
-            targetModel: 'MockOrder',
+            targetTableIdentifier: 'mock:orders',
             keys: ['foreign' => 'order_id', 'owner' => 'id'],
         ),
-    ]);
+    ])->build();
 
-    $this->productsTable = createMockTable('products');
+    $this->productsTable = MockTableFactory::create('products')->build();
 
-    // Mock the manager to resolve model classes to tables
-    $ordersTable = $this->ordersTable;
-    $customersTable = $this->customersTable;
-    $orderItemsTable = $this->orderItemsTable;
-    $productsTable = $this->productsTable;
+    // Create compiled schema with mock tables
+    $this->schema = new CompiledSchema(
+        tablesByIdentifier: [
+            'mock:orders' => SliceDefinition::fromSource($this->ordersTable),
+            'mock:customers' => SliceDefinition::fromSource($this->customersTable),
+            'mock:order_items' => SliceDefinition::fromSource($this->orderItemsTable),
+            'mock:products' => SliceDefinition::fromSource($this->productsTable),
+        ],
+        tablesByName: [
+            'orders' => SliceDefinition::fromSource($this->ordersTable),
+            'customers' => SliceDefinition::fromSource($this->customersTable),
+            'order_items' => SliceDefinition::fromSource($this->orderItemsTable),
+            'products' => SliceDefinition::fromSource($this->productsTable),
+        ],
+        tableProviders: [
+            'mock:orders' => 'mock',
+            'mock:customers' => 'mock',
+            'mock:order_items' => 'mock',
+            'mock:products' => 'mock',
+        ],
+        relations: [
+            'mock:orders' => $this->ordersTable->relations(),
+            'mock:customers' => $this->customersTable->relations(),
+            'mock:order_items' => $this->orderItemsTable->relations(),
+            'mock:products' => $this->productsTable->relations(),
+        ],
+        dimensions: [
+            'mock:orders' => new DimensionCatalog,
+            'mock:customers' => new DimensionCatalog,
+            'mock:order_items' => new DimensionCatalog,
+            'mock:products' => new DimensionCatalog,
+        ],
+        connectionIndex: [
+            'eloquent:default' => [
+                'mock:orders',
+                'mock:customers',
+                'mock:order_items',
+                'mock:products',
+            ],
+        ],
+    );
 
-    $this->manager = \Mockery::mock(SchemaProviderManager::class);
-    $this->manager->allows('resolve')->andReturnUsing(function ($modelClass) use ($ordersTable, $customersTable, $orderItemsTable, $productsTable) {
-        $result = match ($modelClass) {
-            'MockOrder' => $ordersTable,
-            'MockCustomer' => $customersTable,
-            'MockOrderItem' => $orderItemsTable,
-            'MockProduct' => $productsTable,
-            default => throw new \Exception("Model not found: $modelClass"),
-        };
-
-        return SliceDefinition::fromSource($result);
-    });
-
-    $this->finder = new JoinPathFinder($this->manager);
+    $this->finder = new JoinPathFinder($this->schema);
 });
 
 it('finds direct relation path', function () {

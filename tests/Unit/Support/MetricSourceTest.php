@@ -15,7 +15,7 @@ it('stores table and column', function () {
 it('generates metric key', function () {
     $table = new MockSliceSource('orders');
     $source = new MetricSource($table, 'total');
-    expect($source->key())->toBe('eloquent:orders.total');
+    expect($source->key())->toBe('eloquent:null:orders.total');
 });
 
 it('gets table name', function () {

@@ -14,7 +14,8 @@ use NickPotts\Slice\Schemas\Relations\RelationGraph;
 interface SliceSource
 {
     /**
-     * Globally unique identifier for this slice source (e.g. 'eloquent:orders').
+     * Globally unique identifier for this slice source (provider:connection:name).
+     * Example: 'eloquent:mysql:orders' or 'eloquent:null:users' (for default connection).
      */
     public function identifier(): string;
 
@@ -29,9 +30,10 @@ interface SliceSource
     public function provider(): string;
 
     /**
-     * Concrete connection/adapter identifier (e.g. 'eloquent:mysql').
+     * Concrete connection/adapter identifier (e.g. 'mysql').
+     * Null means use the provider's default connection.
      */
-    public function connection(): string;
+    public function connection(): ?string;
 
     /**
      * Physical table/view backing the source, if any.

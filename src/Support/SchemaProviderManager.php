@@ -364,11 +364,17 @@ class SchemaProviderManager
                 // This eliminates runtime calls to table->dimensions() during dimension resolution
                 $dimensions[$identifier] = $table->dimensions();
 
-                // Build connection index: group tables by their connection
-                if (!isset($connectionIndex[$connection])) {
-                    $connectionIndex[$connection] = [];
+                // Build connection index: group tables by provider + connection
+                // Connection is indexed as "provider:connection" to support multiple providers
+                // If connection is null, use "provider:null" to indicate default connection
+                $connectionKey = $connection === null
+                    ? "$providerName:null"
+                    : "$providerName:$connection";
+
+                if (!isset($connectionIndex[$connectionKey])) {
+                    $connectionIndex[$connectionKey] = [];
                 }
-                $connectionIndex[$connection][] = $identifier;
+                $connectionIndex[$connectionKey][] = $identifier;
             }
         }
 

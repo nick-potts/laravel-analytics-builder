@@ -17,7 +17,8 @@ final class MetadataBackedSliceSource implements SliceSource
 
     public function identifier(): string
     {
-        return $this->provider().':'.$this->name();
+        $connectionPart = $this->connection() ?? 'null';
+        return $this->provider().':'.$connectionPart.':'.$this->name();
     }
 
     public function name(): string
@@ -30,11 +31,9 @@ final class MetadataBackedSliceSource implements SliceSource
         return 'eloquent';
     }
 
-    public function connection(): string
+    public function connection(): ?string
     {
-        $connection = $this->metadata->connection ?? config('database.default', 'default');
-
-        return "eloquent:$connection";
+        return $this->metadata->connection;
     }
 
     public function sqlTable(): ?string

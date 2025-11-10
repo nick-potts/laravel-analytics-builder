@@ -74,7 +74,7 @@ it('resolves with provider prefix when ambiguous', function () {
 
     $source = $manager->parseMetricSource('eloquent:orders.total');
     expect($source->tableName())->toBe('orders');
-    expect($source->sliceIdentifier())->toBe('eloquent:orders');
+    expect($source->sliceIdentifier())->toBe('eloquent:null:orders');
     expect($source->columnName())->toBe('total');
 });
 

@@ -3,18 +3,21 @@
 namespace NickPotts\Slice\Engine\Joins;
 
 use NickPotts\Slice\Contracts\SliceSource;
-use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Support\CompiledSchema;
 
 /**
  * Finds shortest join paths between tables using BFS.
  *
  * Given a source and target table, uses breadth-first search through
  * the relation graphs to find the shortest path of joins needed.
+ *
+ * Accepts CompiledSchema for O(1) relation lookups, avoiding per-query
+ * redundant schema resolution.
  */
 final class JoinPathFinder
 {
     public function __construct(
-        private SchemaProviderManager $manager,
+        private CompiledSchema $schema,
     ) {}
 
     /**
@@ -56,8 +59,8 @@ final class JoinPathFinder
 
             // Explore all relations from current table
             foreach ($currentTable->relations()->all() as $relationName => $relation) {
-                $targetModelClass = $relation->targetModel;
-                $targetTable = $this->resolveTargetTable($targetModelClass);
+                $targetIdentifier = $relation->targetTableIdentifier;
+                $targetTable = $this->schema->resolveTable($targetIdentifier);
 
                 if ($targetTable === null) {
                     continue;
@@ -104,26 +107,15 @@ final class JoinPathFinder
     }
 
     /**
-     * Check if two tables are on the same connection.
+     * Check if two tables are on the same connection and provider.
      *
-     * All tables must explicitly declare their connection (never null).
-     * This prevents ambiguity about which database a table actually uses.
+     * Both provider and connection must match. If either connection is null,
+     * they're treated as using the provider's default and must both be null.
      */
     private function sameConnection(SliceSource $from, SliceSource $to): bool
     {
-        return $from->connection() === $to->connection();
+        return $from->provider() === $to->provider()
+            && $from->connection() === $to->connection();
     }
 
-    /**
-     * Resolve a target model class to its table via schema manager.
-     */
-    private function resolveTargetTable(string $modelClass): ?SliceSource
-    {
-        try {
-            return $this->manager->resolve($modelClass);
-        } catch (\Throwable) {
-            // Model not registered or error resolving
-            return null;
-        }
-    }
 }
