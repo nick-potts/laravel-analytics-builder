@@ -3,12 +3,12 @@
 use NickPotts\Slice\Engine\QueryBuilder;
 use NickPotts\Slice\Engine\QueryPlan;
 use NickPotts\Slice\Tests\Support\MockSchemaProvider;
-use NickPotts\Slice\Tests\Support\MockTableContract;
+use NickPotts\Slice\Tests\Support\MockSliceSource;
 
 it('adds normalized metrics', function () {
     $builder = app(QueryBuilder::class);
 
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     app('slice.schema-provider-manager')->register($provider);
@@ -28,7 +28,7 @@ it('adds normalized metrics', function () {
 it('builds query plan', function () {
     $builder = app(QueryBuilder::class);
 
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     app('slice.schema-provider-manager')->register($provider);
@@ -56,7 +56,7 @@ it('throws on no metrics', function () {
 it('resolves joins for single table', function () {
     $builder = app(QueryBuilder::class);
 
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     app('slice.schema-provider-manager')->register($provider);
@@ -76,7 +76,7 @@ it('resolves joins for single table', function () {
 it('returns join plan from resolver', function () {
     $builder = app(QueryBuilder::class);
 
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     app('slice.schema-provider-manager')->register($provider);

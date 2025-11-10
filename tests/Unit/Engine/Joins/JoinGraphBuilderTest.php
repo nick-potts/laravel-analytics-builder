@@ -1,18 +1,19 @@
 <?php
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinGraphBuilder;
 use NickPotts\Slice\Engine\Joins\JoinPathFinder;
-use NickPotts\Slice\Schemas\Keys\PrimaryKeyDescriptor;
+use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Schemas\Relations\RelationType;
-use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Support\CompiledSchema;
+use NickPotts\Slice\Support\SliceDefinition;
 
 /**
  * Create a mock table with relations
  */
-function createGraphBuilderTestTable(string $name, array $relations = []): TableContract
+function createGraphBuilderTestTable(string $name, array $relations = []): SliceSource
 {
     $relationGraph = new RelationGraph;
     foreach ($relations as $relationName => $descriptor) {
@@ -21,26 +22,31 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
         );
     }
 
-    return new class($name, $relationGraph) implements TableContract
+    return new class($name, $relationGraph) implements SliceSource
     {
         public function __construct(
             private string $tableName,
             private RelationGraph $relations,
         ) {}
 
+        public function identifier(): string
+        {
+            return 'mock:null:'.$this->tableName;
+        }
+
         public function name(): string
         {
             return $this->tableName;
         }
 
-        public function connection(): string
+        public function provider(): string
         {
-            return 'default';
+            return 'mock';
         }
 
-        public function primaryKey(): PrimaryKeyDescriptor
+        public function connection(): ?string
         {
-            return new PrimaryKeyDescriptor(['id']);
+            return null;
         }
 
         public function relations(): RelationGraph
@@ -52,24 +58,37 @@ function createGraphBuilderTestTable(string $name, array $relations = []): Table
         {
             return new \NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
         }
+
+        public function sqlTable(): ?string
+        {
+            return $this->tableName;
+        }
+
+        public function sql(): ?string
+        {
+            return null;
+        }
+
+        public function meta(): array
+        {
+            return [];
+        }
     };
 }
 
 beforeEach(function () {
-    $manager = \Mockery::mock(SchemaProviderManager::class);
-
     // Create mock tables
     $this->ordersTable = createGraphBuilderTestTable('orders', [
         'customer' => new RelationDescriptor(
             name: 'customer',
             type: RelationType::BelongsTo,
-            targetModel: 'MockCustomer',
+            targetTableIdentifier: 'mock:null:customers',
             keys: ['foreign' => 'customer_id', 'owner' => 'id'],
         ),
         'items' => new RelationDescriptor(
             name: 'items',
             type: RelationType::HasMany,
-            targetModel: 'MockOrderItem',
+            targetTableIdentifier: 'mock:null:order_items',
             keys: ['local' => 'id', 'foreign' => 'order_id'],
         ),
     ]);
@@ -80,25 +99,56 @@ beforeEach(function () {
         'order' => new RelationDescriptor(
             name: 'order',
             type: RelationType::BelongsTo,
-            targetModel: 'MockOrder',
+            targetTableIdentifier: 'mock:null:orders',
             keys: ['foreign' => 'order_id', 'owner' => 'id'],
         ),
     ]);
 
     $this->productsTable = createGraphBuilderTestTable('products');
 
-    // Mock the manager
-    $manager->allows('resolve')->andReturnUsing(function ($modelClass) {
-        return match ($modelClass) {
-            'MockOrder' => $this->ordersTable,
-            'MockCustomer' => $this->customersTable,
-            'MockOrderItem' => $this->orderItemsTable,
-            'MockProduct' => $this->productsTable,
-            default => throw new \Exception("Model not found: $modelClass"),
-        };
-    });
+    // Create compiled schema with mock tables
+    $this->schema = new CompiledSchema(
+        tablesByIdentifier: [
+            'mock:null:orders' => SliceDefinition::fromSource($this->ordersTable),
+            'mock:null:customers' => SliceDefinition::fromSource($this->customersTable),
+            'mock:null:order_items' => SliceDefinition::fromSource($this->orderItemsTable),
+            'mock:null:products' => SliceDefinition::fromSource($this->productsTable),
+        ],
+        tablesByName: [
+            'orders' => SliceDefinition::fromSource($this->ordersTable),
+            'customers' => SliceDefinition::fromSource($this->customersTable),
+            'order_items' => SliceDefinition::fromSource($this->orderItemsTable),
+            'products' => SliceDefinition::fromSource($this->productsTable),
+        ],
+        tableProviders: [
+            'mock:null:orders' => 'mock',
+            'mock:null:customers' => 'mock',
+            'mock:null:order_items' => 'mock',
+            'mock:null:products' => 'mock',
+        ],
+        relations: [
+            'mock:null:orders' => $this->ordersTable->relations(),
+            'mock:null:customers' => $this->customersTable->relations(),
+            'mock:null:order_items' => $this->orderItemsTable->relations(),
+            'mock:null:products' => $this->productsTable->relations(),
+        ],
+        dimensions: [
+            'mock:null:orders' => new DimensionCatalog,
+            'mock:null:customers' => new DimensionCatalog,
+            'mock:null:order_items' => new DimensionCatalog,
+            'mock:null:products' => new DimensionCatalog,
+        ],
+        connectionIndex: [
+            'mock:null' => [
+                'mock:null:orders',
+                'mock:null:customers',
+                'mock:null:order_items',
+                'mock:null:products',
+            ],
+        ],
+    );
 
-    $this->pathFinder = new JoinPathFinder($manager);
+    $this->pathFinder = new JoinPathFinder($this->schema);
     $this->builder = new JoinGraphBuilder($this->pathFinder);
 });
 

@@ -6,7 +6,7 @@ use NickPotts\Slice\Exceptions\TableNotFoundException;
 use NickPotts\Slice\Support\AmbiguousTableException;
 use NickPotts\Slice\Support\SchemaProviderManager;
 use NickPotts\Slice\Tests\Support\MockSchemaProvider;
-use NickPotts\Slice\Tests\Support\MockTableContract;
+use NickPotts\Slice\Tests\Support\MockSliceSource;
 
 it('registers providers', function () {
     $manager = new SchemaProviderManager;
@@ -20,14 +20,16 @@ it('registers providers', function () {
 
 it('resolves unambiguous table', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
 
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('eloquent');
 
     $manager->register($provider);
 
-    expect($manager->resolve('orders'))->toBe($table);
+    $resolved = $manager->resolve('orders');
+    expect($resolved->name())->toBe('orders');
+    expect($resolved->provider())->toBe('eloquent');
 });
 
 it('throws when table not found', function () {
@@ -42,11 +44,11 @@ it('throws when table not found', function () {
 it('throws when table is ambiguous', function () {
     $manager = new SchemaProviderManager;
 
-    $table1 = new MockTableContract('orders');
+    $table1 = new MockSliceSource('orders');
     $provider1 = new MockSchemaProvider;
     $provider1->registerTable($table1)->setName('eloquent');
 
-    $table2 = new MockTableContract('orders');
+    $table2 = new MockSliceSource('orders');
     $provider2 = new MockSchemaProvider;
     $provider2->registerTable($table2)->setName('clickhouse');
 
@@ -59,11 +61,11 @@ it('throws when table is ambiguous', function () {
 it('resolves with provider prefix when ambiguous', function () {
     $manager = new SchemaProviderManager;
 
-    $table1 = new MockTableContract('orders');
+    $table1 = new MockSliceSource('orders');
     $provider1 = new MockSchemaProvider;
     $provider1->registerTable($table1)->setName('eloquent');
 
-    $table2 = new MockTableContract('orders');
+    $table2 = new MockSliceSource('orders');
     $provider2 = new MockSchemaProvider;
     $provider2->registerTable($table2)->setName('clickhouse');
 
@@ -71,13 +73,14 @@ it('resolves with provider prefix when ambiguous', function () {
     $manager->register($provider2);
 
     $source = $manager->parseMetricSource('eloquent:orders.total');
-    expect($source->table)->toBe($table1);
+    expect($source->tableName())->toBe('orders');
+    expect($source->sliceIdentifier())->toBe('eloquent:null:orders');
     expect($source->columnName())->toBe('total');
 });
 
 it('parses metric source table.column', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('eloquent');
     $manager->register($provider);
@@ -89,7 +92,7 @@ it('parses metric source table.column', function () {
 
 it('parses metric source with provider prefix', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('clickhouse');
     $manager->register($provider);
@@ -101,21 +104,21 @@ it('parses metric source with provider prefix', function () {
 
 it('detects provider prefix vs connection prefix', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders', 'mysql');
+    $table = new MockSliceSource('orders', 'eloquent:mysql');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('eloquent');
     $manager->register($provider);
 
-    // 'analytics' is not a provider, so it's a connection prefix
+    // 'analytics' is not a provider, so it's ignored (metric has no connection override)
     $source = $manager->parseMetricSource('analytics:orders.total');
-    expect($source->getConnection())->toBe('analytics');
+    expect($source->slice->connection())->toBe('eloquent:mysql');
     expect($source->tableName())->toBe('orders');
 });
 
 it('gets all tables', function () {
     $manager = new SchemaProviderManager;
-    $table1 = new MockTableContract('orders');
-    $table2 = new MockTableContract('customers');
+    $table1 = new MockSliceSource('orders');
+    $table2 = new MockSliceSource('customers');
 
     $provider = new MockSchemaProvider;
     $provider->registerTable($table1);
@@ -131,11 +134,11 @@ it('gets all tables', function () {
 it('prefixes ambiguous table names in allTables', function () {
     $manager = new SchemaProviderManager;
 
-    $table1 = new MockTableContract('orders');
+    $table1 = new MockSliceSource('orders');
     $provider1 = new MockSchemaProvider;
     $provider1->registerTable($table1)->setName('eloquent');
 
-    $table2 = new MockTableContract('orders');
+    $table2 = new MockSliceSource('orders');
     $provider2 = new MockSchemaProvider;
     $provider2->registerTable($table2)->setName('clickhouse');
 
@@ -149,7 +152,7 @@ it('prefixes ambiguous table names in allTables', function () {
 
 it('checks if table can be resolved', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('eloquent');
     $manager->register($provider);
@@ -160,7 +163,7 @@ it('checks if table can be resolved', function () {
 
 it('gets available tables', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('eloquent');
     $manager->register($provider);

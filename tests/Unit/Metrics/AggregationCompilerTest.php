@@ -25,7 +25,7 @@ it('throws on missing aggregation compiler', function () {
 
     expect(fn () => AggregationCompiler::compile($sum, $grammar))
         ->toThrow(\RuntimeException::class);
-})->skip('Needs compiler registered');
+});
 
 it('uses default compiler when driver-specific override not found', function () {
     AggregationCompiler::reset();

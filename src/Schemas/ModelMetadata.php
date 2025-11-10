@@ -76,7 +76,7 @@ final class ModelMetadata
             $relations[$name] = [
                 'name' => $descriptor->name,
                 'type' => $descriptor->type->value,
-                'targetModel' => $descriptor->targetModel,
+                'targetModel' => $descriptor->targetTableIdentifier,
                 'keys' => $descriptor->keys,
                 'pivot' => $descriptor->pivot,
             ];

@@ -15,6 +15,9 @@ enum RelationType: string
 /**
  * Describes a relation from one table to another.
  *
+ * Uses table identifiers (e.g., 'eloquent:customers') instead of model class names
+ * to enable pure schema-based relation resolution without model introspection.
+ *
  * Used to build the relation graph for automatic join resolution.
  */
 final class RelationDescriptor
@@ -22,20 +25,22 @@ final class RelationDescriptor
     public function __construct(
         public readonly string $name,
         public readonly RelationType $type,
-        public readonly string $targetModel,
+        public readonly string $targetTableIdentifier,
         public readonly array $keys,
         public readonly ?string $pivot = null,
     ) {}
 
     /**
-     * Get the target table name.
+     * Get the target table identifier.
      *
-     * For auto-discovered relations, this is the target model class.
-     * The query engine will resolve the table name later.
+     * Example: 'eloquent:customers', 'manual:orders'
+     *
+     * Table identifier is schema-provider-namespaced and can be resolved
+     * directly via CompiledSchema::resolveTable().
      */
     public function target(): string
     {
-        return $this->targetModel;
+        return $this->targetTableIdentifier;
     }
 
     /**

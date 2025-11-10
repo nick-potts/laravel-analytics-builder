@@ -2,7 +2,7 @@
 
 namespace NickPotts\Slice\Engine\Joins;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 
 /**
  * Builds complete join graphs for multiple tables.
@@ -24,7 +24,7 @@ final class JoinGraphBuilder
      *
      * Returns empty plan if tables cannot be connected (e.g., different connections).
      *
-     * @param  array<TableContract>  $tables
+     * @param  array<SliceSource>  $tables
      */
     public function build(array $tables): JoinPlan
     {
@@ -50,7 +50,7 @@ final class JoinGraphBuilder
                 if ($path !== null) {
                     // Add all joins from path to plan (with deduplication)
                     foreach ($path as $joinSpec) {
-                        $key = $joinSpec->fromTable.'->'.$joinSpec->toTable;
+                        $key = $joinSpec->fromIdentifier.'->'.$joinSpec->toIdentifier;
 
                         if (! isset($dedupeKeys[$key])) {
                             $dedupeKeys[$key] = true;

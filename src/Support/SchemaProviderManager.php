@@ -3,7 +3,7 @@
 namespace NickPotts\Slice\Support;
 
 use NickPotts\Slice\Contracts\SchemaProvider;
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Exceptions\TableNotFoundException;
 use NickPotts\Slice\Support\Cache\SchemaCache;
 
@@ -36,6 +36,8 @@ class SchemaProviderManager
 
     private SchemaCache $cache;
 
+    private ?CompiledSchema $compiledSchema = null;
+
     public function __construct(?SchemaCache $cache = null)
     {
         $this->cache = $cache ?? new SchemaCache;
@@ -65,7 +67,7 @@ class SchemaProviderManager
      * @throws TableNotFoundException If table not found in any provider
      * @throws AmbiguousTableException If table exists in multiple providers
      */
-    public function resolve(string $identifier): TableContract
+    public function resolve(string $identifier): SliceDefinition
     {
         $foundIn = [];
         $firstTable = null;
@@ -157,9 +159,8 @@ class SchemaProviderManager
         }
 
         return new MetricSource(
-            table: $table,
-            column: $column,
-            connection: $connectionName ?? $table->connection()
+            $table,
+            $column
         );
     }
 
@@ -171,7 +172,7 @@ class SchemaProviderManager
      * - 'orders' (if only one provider has it)
      * - 'eloquent:orders' and 'clickhouse:orders' (if multiple have it)
      *
-     * @return array<string, TableContract>
+     * @return array<string, SliceSource>
      */
     public function allTables(): array
     {
@@ -260,12 +261,12 @@ class SchemaProviderManager
     /**
      * Helper to resolve a table from a specific provider.
      */
-    private function resolveFromProvider(SchemaProvider $provider, string $identifier): TableContract
+    private function resolveFromProvider(SchemaProvider $provider, string $identifier): SliceDefinition
     {
         try {
             $source = $provider->resolveMetricSource($identifier.'.id');
 
-            return $source->table;
+            return $source->slice;
         } catch (\Throwable $e) {
             throw new TableNotFoundException(
                 "Provider '{$provider->name()}' could not resolve table '{$identifier}': ".$e->getMessage()
@@ -279,5 +280,153 @@ class SchemaProviderManager
     private function isModelClassName(string $reference): bool
     {
         return str_contains($reference, '\\');
+    }
+
+    /**
+     * Get or compile the schema (lazy-evaluated, memoized).
+     *
+     * Pre-computes all tables, relations, dimensions, and connection indexes
+     * for O(1) lookups during query building. Result is memoized to avoid
+     * redundant compilation on subsequent calls.
+     *
+     * Compilation is lazy - only happens on first call, not at service provider boot.
+     *
+     * Future: This method will check for cached schema from the optimization
+     * hook (Laravel's `artisan optimize` command) before recompiling.
+     *
+     * @return CompiledSchema The compiled, immutable schema ready for use
+     */
+    public function schema(): CompiledSchema
+    {
+        // Return memoized result if already compiled
+        if ($this->compiledSchema !== null) {
+            return $this->compiledSchema;
+        }
+
+        // TODO: Check for cached schema from optimization hook
+        // if ($cached = $this->loadCachedSchema()) {
+        //     return $this->compiledSchema = $cached;
+        // }
+
+        $this->compiledSchema = $this->compileSchema();
+
+        return $this->compiledSchema;
+    }
+
+    /**
+     * Compile the schema from all registered providers.
+     *
+     * This is the core compilation logic, separated so it can be:
+     * 1. Called lazily on first schema() call
+     * 2. Called during `artisan optimize` to cache to disk
+     * 3. Cached and loaded from disk in production
+     *
+     * @return CompiledSchema The freshly compiled schema
+     */
+    private function compileSchema(): CompiledSchema
+    {
+        $tablesByIdentifier = [];
+        $tablesByName = [];
+        $tableProviders = [];
+        $relations = [];
+        $dimensions = [];
+        $connectionIndex = [];
+
+        // Iterate all registered providers
+        foreach ($this->providers as $providerName => $provider) {
+            // Iterate all tables from this provider
+            foreach ($provider->tables() as $table) {
+                $identifier = $table->identifier(); // e.g., 'eloquent:orders'
+                $name = $table->name();              // e.g., 'orders'
+                $connection = $table->connection();  // e.g., 'eloquent:mysql'
+
+                // Build immutable SliceDefinition snapshot
+                $definition = SliceDefinition::fromSource($table);
+
+                // Index by identifier (always unique per provider)
+                $tablesByIdentifier[$identifier] = $definition;
+                $tableProviders[$identifier] = $providerName;
+
+                // Index by bare name (may have collisions)
+                // Strategy: first provider wins for bare name, others must use prefix
+                if (! isset($tablesByName[$name])) {
+                    $tablesByName[$name] = $definition;
+                } else {
+                    // Ambiguous - mark as unresolvable via bare name
+                    unset($tablesByName[$name]);
+                }
+
+                // Pre-compute relation graph for this table
+                // This eliminates runtime calls to table->relations() during join resolution
+                $relations[$identifier] = $table->relations();
+
+                // Pre-compute dimension catalog for this table
+                // This eliminates runtime calls to table->dimensions() during dimension resolution
+                $dimensions[$identifier] = $table->dimensions();
+
+                // Build connection index: group tables by provider + connection
+                // Connection is indexed as "provider:connection" to support multiple providers
+                // If connection is null, use "provider:null" to indicate default connection
+                $connectionKey = $connection === null
+                    ? "$providerName:null"
+                    : "$providerName:$connection";
+
+                if (! isset($connectionIndex[$connectionKey])) {
+                    $connectionIndex[$connectionKey] = [];
+                }
+                $connectionIndex[$connectionKey][] = $identifier;
+            }
+        }
+
+        return new CompiledSchema(
+            tablesByIdentifier: $tablesByIdentifier,
+            tablesByName: $tablesByName,
+            tableProviders: $tableProviders,
+            relations: $relations,
+            dimensions: $dimensions,
+            connectionIndex: $connectionIndex,
+        );
+    }
+
+    /**
+     * Load cached schema from disk (if available).
+     *
+     * Used during optimization hook to load pre-compiled schema.
+     * Future implementation will check bootstrap/cache/slice-schema.php
+     *
+     * @return CompiledSchema|null The cached schema or null if not found
+     */
+    private function loadCachedSchema(): ?CompiledSchema
+    {
+        // TODO: Load from bootstrap/cache/slice-schema.php
+        // if (file_exists($path = $this->getCachePath())) {
+        //     return require $path;
+        // }
+        return null;
+    }
+
+    /**
+     * Get the path where cached schema should be stored.
+     *
+     * Used by optimization hook to cache schema to disk.
+     * Future implementation for artisan optimize.
+     *
+     * @return string The filesystem path for cached schema
+     */
+    private function getCachePath(): string
+    {
+        // TODO: Return bootstrap_path('cache/slice-schema.php')
+        // This will be called by artisan optimize hook
+        return base_path('bootstrap/cache/slice-schema.php');
+    }
+
+    /**
+     * Clear the compiled schema cache.
+     *
+     * Useful for testing or when providers change after initial compilation.
+     */
+    public function clearCompiled(): void
+    {
+        $this->compiledSchema = null;
     }
 }

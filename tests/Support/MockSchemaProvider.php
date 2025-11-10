@@ -3,7 +3,7 @@
 namespace NickPotts\Slice\Tests\Support;
 
 use NickPotts\Slice\Contracts\SchemaProvider;
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Support\Cache\SchemaCache;
@@ -36,9 +36,8 @@ class MockSchemaProvider implements SchemaProvider
         }
 
         return new MetricSource(
-            table: $this->tables[$tableName],
-            column: $column,
-            connection: null
+            $this->tables[$tableName],
+            $column
         );
     }
 
@@ -57,7 +56,7 @@ class MockSchemaProvider implements SchemaProvider
         return $this->providerName;
     }
 
-    public function registerTable(TableContract $table): self
+    public function registerTable(SliceSource $table): self
     {
         $this->tables[$table->name()] = $table;
 

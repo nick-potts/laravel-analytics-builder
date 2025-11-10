@@ -4,7 +4,7 @@ namespace NickPotts\Slice\Providers\Eloquent;
 
 use NickPotts\Slice\Contracts\CachableSchemaProvider;
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
-use NickPotts\Slice\Schemas\MetadataBackedTable;
+use NickPotts\Slice\Schemas\MetadataBackedSliceSource;
 use NickPotts\Slice\Schemas\ModelMetadata;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 use NickPotts\Slice\Support\Cache\SchemaCache;
@@ -72,7 +72,7 @@ class EloquentSchemaProvider implements CachableSchemaProvider
         $this->ensureScanned();
 
         foreach ($this->models as $metadata) {
-            yield new MetadataBackedTable($metadata);
+            yield new MetadataBackedSliceSource($metadata);
         }
     }
 
@@ -107,9 +107,8 @@ class EloquentSchemaProvider implements CachableSchemaProvider
         }
 
         return new MetricSource(
-            table: new MetadataBackedTable($metadata),
-            column: $column,
-            connection: $metadata->connection
+            new MetadataBackedSliceSource($metadata),
+            $column
         );
     }
 

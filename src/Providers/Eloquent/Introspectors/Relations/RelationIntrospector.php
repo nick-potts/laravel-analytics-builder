@@ -99,7 +99,7 @@ class RelationIntrospector
             BelongsTo::class => new RelationDescriptor(
                 name: $method->getName(),
                 type: RelationType::BelongsTo,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => $method->getName().'_id',
                     'owner' => 'id',
@@ -108,7 +108,7 @@ class RelationIntrospector
             HasMany::class => new RelationDescriptor(
                 name: $method->getName(),
                 type: RelationType::HasMany,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => str_replace('_id', '', $method->getName()).'_id',
                     'local' => 'id',
@@ -117,7 +117,7 @@ class RelationIntrospector
             HasOne::class => new RelationDescriptor(
                 name: $method->getName(),
                 type: RelationType::HasOne,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => str_replace('_id', '', $method->getName()).'_id',
                     'local' => 'id',
@@ -126,7 +126,7 @@ class RelationIntrospector
             BelongsToMany::class => new RelationDescriptor(
                 name: $method->getName(),
                 type: RelationType::BelongsToMany,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => 'id',
                     'related' => 'id',
@@ -216,7 +216,7 @@ class RelationIntrospector
             return new RelationDescriptor(
                 name: $name,
                 type: RelationType::BelongsTo,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => $relation->getForeignKeyName(),
                     'owner' => $relation->getOwnerKeyName(),
@@ -228,7 +228,7 @@ class RelationIntrospector
             return new RelationDescriptor(
                 name: $name,
                 type: RelationType::HasMany,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => $relation->getForeignKeyName(),
                     'local' => $relation->getLocalKeyName(),
@@ -240,7 +240,7 @@ class RelationIntrospector
             return new RelationDescriptor(
                 name: $name,
                 type: RelationType::HasOne,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => $relation->getForeignKeyName(),
                     'local' => $relation->getLocalKeyName(),
@@ -252,7 +252,7 @@ class RelationIntrospector
             return new RelationDescriptor(
                 name: $name,
                 type: RelationType::BelongsToMany,
-                targetModel: $relatedModel,
+                targetTableIdentifier: $relatedModel,
                 keys: [
                     'foreign' => $relation->getForeignPivotKeyName(),
                     'related' => $relation->getRelatedPivotKeyName(),

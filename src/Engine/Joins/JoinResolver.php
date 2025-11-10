@@ -2,7 +2,7 @@
 
 namespace NickPotts\Slice\Engine\Joins;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 
 /**
  * Resolves table joins needed for multi-table queries.
@@ -19,7 +19,7 @@ final class JoinResolver
     /**
      * Build a join plan for the given tables.
      *
-     * @param  array<TableContract>  $tables
+     * @param  array<SliceSource>  $tables
      */
     public function resolve(array $tables): JoinPlan
     {

@@ -12,12 +12,21 @@ use NickPotts\Slice\Schemas\Relations\RelationDescriptor;
  */
 final class JoinSpecification
 {
+    public readonly string $fromIdentifier;
+
+    public readonly string $toIdentifier;
+
     public function __construct(
         public readonly string $fromTable,
         public readonly string $toTable,
         public readonly RelationDescriptor $relation,
         public readonly string $type = 'left', // 'left', 'inner', 'right', 'cross'
-    ) {}
+        ?string $fromIdentifier = null,
+        ?string $toIdentifier = null,
+    ) {
+        $this->fromIdentifier = $fromIdentifier ?? $this->fromTable;
+        $this->toIdentifier = $toIdentifier ?? $this->toTable;
+    }
 
     /**
      * Get the foreign key column name from this relation.

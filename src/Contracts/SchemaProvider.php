@@ -33,7 +33,7 @@ interface SchemaProvider
     /**
      * Get all tables this provider can supply.
      *
-     * @return iterable<TableContract>
+     * @return iterable<SliceSource>
      */
     public function tables(): iterable;
 

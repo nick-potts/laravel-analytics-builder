@@ -2,6 +2,7 @@
 
 namespace NickPotts\Slice;
 
+use NickPotts\Slice\Engine\Joins\JoinResolver;
 use NickPotts\Slice\Engine\QueryBuilder;
 use NickPotts\Slice\Metrics\Aggregations\Aggregation;
 use NickPotts\Slice\Support\SchemaProviderManager;
@@ -24,7 +25,10 @@ class SliceManager
      */
     public function query(): QueryBuilder
     {
-        return new QueryBuilder($this->manager);
+        return new QueryBuilder(
+            $this->manager,
+            app(JoinResolver::class)
+        );
     }
 
     /**

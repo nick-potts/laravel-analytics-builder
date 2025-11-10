@@ -1,9 +1,14 @@
 # Schema Provider Architecture - Implementation Progress
 
-**Project:** Slice Laravel Analytics Package
-**Status:** In Progress
+**Project:** Slice Laravel Analytics Package (Cube.js-Inspired Semantic Layer)
+**Status:** In Progress (Phase 1-3: 100% Complete, Phase 4 Starting)
 **Date Started:** 2025-11-08
 **Target Completion:** Week of 2025-12-20
+
+**Note:** Slice is evolving as a **cube.js-inspired semantic analytics layer for Laravel**, with three core auto-features:
+1. **Auto-discovery** ✅ - EloquentSchemaProvider introspects Laravel models automatically
+2. **Auto-joins** ✅ - JoinResolver finds transitive relationship paths via BFS
+3. **Auto-aggregations** 🔄 - QueryBuilder generates GROUP BY intelligently (Phase 4-5)
 
 ---
 
@@ -69,7 +74,7 @@
 
 **Context & Guardrails**
 - `src/Engine/QueryBuilder.php` and its legacy adapters were removed, so this phase delivers a net-new provider-native query pipeline rather than a refactor.  
-- All runtime surfaces (metrics, dimensions, filters, joins, aggregations) must speak only in terms of `SchemaProviderManager`, `MetricSource`, `TableContract`, and provider metadata (`RelationGraph`, `DimensionCatalog`, `PrimaryKeyDescriptor`).  
+- All runtime surfaces (metrics, dimensions, filters, joins, aggregations) must speak only in terms of `SchemaProviderManager`, `MetricSource`, `SliceSource`, and provider metadata (`RelationGraph`, `DimensionCatalog`, `PrimaryKeyDescriptor`).  
 - The rebuilt engine must leave stable seams for Phase 4 (base-table heuristics) and Phase 5 (relation chain filters) so we avoid another churn cycle once those phases begin.
 
 **Sequenced Workstreams**
@@ -118,43 +123,45 @@
 
 ---
 
-### Phase 4: Base Table Resolution (Week 6) - PENDING
+### Phase 4: Auto-Aggregations & Base Table Resolution (Week 6) - PENDING
 
-**Goal:** Smart GROUP BY resolution with heuristics
+**Goal:** Smart GROUP BY resolution with calculated measures support
 
-| Task                              | Status    | Notes                                |
-|-----------------------------------|-----------|--------------------------------------|
-| Implement BaseTableResolver       | ⏳ PENDING | Determine primary table from metrics |
-| Create table selection heuristics | ⏳ PENDING | Smart selection logic                |
-| Write edge case tests             | ⏳ PENDING | GROUP BY edge cases                  |
-| **Phase 4 Subtotal**              | **0%**    | 0/3 tasks started                    |
-
----
-
-### Phase 5: Relation Filters (Week 7) - PENDING
-
-**Goal:** Multi-hop join support for filtering
-
-| Task                         | Status    | Notes                       |
-|------------------------------|-----------|-----------------------------|
-| Implement RelationPathWalker | ⏳ PENDING | Walk relation chains        |
-| Add relation chain filtering | ⏳ PENDING | Filter across multiple hops |
-| Write complex filter tests   | ⏳ PENDING | Test edge cases             |
-| **Phase 5 Subtotal**         | **0%**    | 0/3 tasks started           |
+| Task                                      | Status    | Notes                                           |
+|-------------------------------------------|-----------|--------------------------------------------------|
+| Implement BaseTableResolver               | ⏳ PENDING | Determine primary table from metrics            |
+| Create table selection heuristics         | ⏳ PENDING | Smart selection logic                           |
+| Implement calculated measures             | ⏳ PENDING | Metric composition (e.g., revenue/users = ARPU) |
+| Write edge case tests                     | ⏳ PENDING | GROUP BY + calculated measures edge cases       |
+| **Phase 4 Subtotal**                      | **0%**    | 0/4 tasks started                               |
 
 ---
 
-### Phase 6: Documentation (Week 8) - PENDING
+### Phase 5: Views Layer & Multi-Hop Filters (Week 7) - PENDING
 
-**Goal:** Complete documentation and guides
+**Goal:** Semantic facade for complex queries, relation filters across hops
 
-| Task                         | Status    | Notes                         |
-|------------------------------|-----------|-------------------------------|
-| Create provider author guide | ⏳ PENDING | How to build custom providers |
-| Build example providers      | ⏳ PENDING | ClickHouse, OpenAPI, GraphQL  |
-| Write API documentation      | ⏳ PENDING | Usage examples                |
-| Create video tutorials       | ⏳ PENDING | Setup and usage videos        |
-| **Phase 6 Subtotal**         | **0%**    | 0/5 tasks started             |
+| Task                                | Status    | Notes                                     |
+|-------------------------------------|-----------|-------------------------------------------|
+| Implement Views (semantic layer)    | ⏳ PENDING | Facade layer managing join ambiguity      |
+| Add multi-hop relation filtering    | ⏳ PENDING | Filter across multiple join hops          |
+| Implement ambiguous path resolution | ⏳ PENDING | Hints + join preferences for ambiguities  |
+| Write complex filter tests          | ⏳ PENDING | Test multi-table filtering edge cases     |
+| **Phase 5 Subtotal**                | **0%**    | 0/4 tasks started                         |
+
+---
+
+### Phase 6: Pre-Aggregations & Documentation (Week 8) - PENDING
+
+**Goal:** Performance optimization via pre-aggs, complete all documentation
+
+| Task                                  | Status    | Notes                                          |
+|---------------------------------------|-----------|------------------------------------------------|
+| Implement pre-aggregation caching     | ⏳ PENDING | Cache pre-computed aggregates                  |
+| Create provider author guide          | ⏳ PENDING | How to build custom SchemaProviders            |
+| Build example providers               | ⏳ PENDING | ClickHouse, OpenAPI, GraphQL, Postgres        |
+| Write API & migration documentation   | ⏳ PENDING | Usage examples, legacy→semantic migration      |
+| **Phase 6 Subtotal**                  | **0%**    | 0/4 tasks started                              |
 
 ---
 

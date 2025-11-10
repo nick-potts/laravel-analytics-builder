@@ -2,8 +2,9 @@
 
 namespace NickPotts\Slice\Engine;
 
-use Illuminate\Database\ConnectionInterface;
+use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Engine\Joins\JoinResolver;
+use NickPotts\Slice\Metrics\Aggregations\Aggregation;
 use NickPotts\Slice\Support\MetricSource;
 use NickPotts\Slice\Support\SchemaProviderManager;
 
@@ -29,14 +30,14 @@ class QueryBuilder
     /**
      * Tables involved in the query (de-duped)
      *
-     * @var array<string, \Slice\Contracts\TableContract>
+     * @var array<string, SliceSource>
      */
     private array $tables = [];
 
     /**
-     * Connection to use (if multi-table, all must be on same connection)
+     * Connection identifier to use (if multi-table, all must be on same connection)
      */
-    private ?ConnectionInterface $connection = null;
+    private ?string $connection = null;
 
     public function __construct(SchemaProviderManager $manager, JoinResolver $joinResolver)
     {
@@ -47,7 +48,7 @@ class QueryBuilder
     /**
      * Add normalized metrics to the query
      *
-     * @param  array<array{source: MetricSource, aggregation: \Slice\Metrics\Aggregations\Aggregation}>  $normalizedMetrics
+     * @param  array<array{source: MetricSource, aggregation: Aggregation}>  $normalizedMetrics
      */
     public function addMetrics(array $normalizedMetrics): self
     {
@@ -58,20 +59,21 @@ class QueryBuilder
             $this->metrics[$key] = $source;
 
             // Extract table and validate connection consistency
-            $table = $source->table;
-            $connection = $source->getConnection();
+            $slice = $source->slice;
+            $resolvedConnection = $slice->connection();
 
-            $isNewTable = ! isset($this->tables[$table->name()]);
+            $sliceKey = $slice->identifier();
+            $isNewTable = ! isset($this->tables[$sliceKey]);
             if ($isNewTable) {
-                $this->tables[$table->name()] = $table;
+                $this->tables[$sliceKey] = $slice;
             }
 
             if ($this->connection === null) {
-                $this->connection = $this->getConnectionFromTable($table, $connection);
-            } elseif ($isNewTable && $this->connection->getName() !== ($connection ?? $table->connection())) {
+                $this->connection = $resolvedConnection;
+            } elseif ($isNewTable && $this->connection !== $resolvedConnection) {
                 throw new \RuntimeException(
                     'Cannot mix tables from different connections: '.
-                    $this->connection->getName().' and '.$table->connection()
+                    $this->connection.' and '.$resolvedConnection
                 );
             }
         }
@@ -98,17 +100,6 @@ class QueryBuilder
             tables: $this->tables,
             metrics: $this->metrics,
             joinPlan: $joinPlan,
-            connection: $this->connection,
         );
-    }
-
-    /**
-     * Get the connection for a table
-     */
-    private function getConnectionFromTable($table, ?string $connectionName): ConnectionInterface
-    {
-        $connectionName = $connectionName ?? $table->connection();
-
-        return \DB::connection($connectionName);
     }
 }

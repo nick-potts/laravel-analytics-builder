@@ -2,19 +2,22 @@
 
 namespace NickPotts\Slice\Engine\Joins;
 
-use NickPotts\Slice\Contracts\TableContract;
-use NickPotts\Slice\Support\SchemaProviderManager;
+use NickPotts\Slice\Contracts\SliceSource;
+use NickPotts\Slice\Support\CompiledSchema;
 
 /**
  * Finds shortest join paths between tables using BFS.
  *
  * Given a source and target table, uses breadth-first search through
  * the relation graphs to find the shortest path of joins needed.
+ *
+ * Accepts CompiledSchema for O(1) relation lookups, avoiding per-query
+ * redundant schema resolution.
  */
 final class JoinPathFinder
 {
     public function __construct(
-        private SchemaProviderManager $manager,
+        private CompiledSchema $schema,
     ) {}
 
     /**
@@ -27,14 +30,16 @@ final class JoinPathFinder
      * @return array<JoinSpecification>|null Ordered list of joins or null if no path
      */
     public function find(
-        TableContract $from,
-        TableContract $to,
+        SliceSource $from,
+        SliceSource $to,
     ): ?array {
         $fromName = $from->name();
         $toName = $to->name();
+        $fromIdentifier = $from->identifier();
+        $toIdentifier = $to->identifier();
 
         // Same table, no join needed
-        if ($fromName === $toName) {
+        if ($fromIdentifier === $toIdentifier) {
             return [];
         }
 
@@ -45,22 +50,24 @@ final class JoinPathFinder
 
         // BFS: queue items are [currentTable, pathSoFar]
         $queue = [[$from, []]];
-        $visited = [$fromName => true];
+        $visited = [$fromIdentifier => true];
 
         while (! empty($queue)) {
             [$currentTable, $path] = array_shift($queue);
             $currentName = $currentTable->name();
+            $currentIdentifier = $currentTable->identifier();
 
             // Explore all relations from current table
             foreach ($currentTable->relations()->all() as $relationName => $relation) {
-                $targetModelClass = $relation->targetModel;
-                $targetTable = $this->resolveTargetTable($targetModelClass);
+                $targetIdentifier = $relation->targetTableIdentifier;
+                $targetTable = $this->schema->resolveTable($targetIdentifier);
 
                 if ($targetTable === null) {
                     continue;
                 }
 
                 $targetName = $targetTable->name();
+                $targetIdentifier = $targetTable->identifier();
 
                 // Skip if on different connection
                 if (! $this->sameConnection($currentTable, $targetTable)) {
@@ -68,7 +75,7 @@ final class JoinPathFinder
                 }
 
                 // Skip if already visited (prevents cycles)
-                if (isset($visited[$targetName])) {
+                if (isset($visited[$targetIdentifier])) {
                     continue;
                 }
 
@@ -77,18 +84,20 @@ final class JoinPathFinder
                     fromTable: $currentName,
                     toTable: $targetName,
                     relation: $relation,
+                    fromIdentifier: $currentIdentifier,
+                    toIdentifier: $targetIdentifier,
                 );
 
                 // Add to path
                 $newPath = [...$path, $joinSpec];
 
                 // Found target!
-                if ($targetName === $toName) {
+                if ($targetIdentifier === $toIdentifier) {
                     return $newPath;
                 }
 
                 // Mark visited and enqueue for exploration
-                $visited[$targetName] = true;
+                $visited[$targetIdentifier] = true;
                 $queue[] = [$targetTable, $newPath];
             }
         }
@@ -98,26 +107,14 @@ final class JoinPathFinder
     }
 
     /**
-     * Check if two tables are on the same connection.
+     * Check if two tables are on the same connection and provider.
      *
-     * All tables must explicitly declare their connection (never null).
-     * This prevents ambiguity about which database a table actually uses.
+     * Both provider and connection must match. If either connection is null,
+     * they're treated as using the provider's default and must both be null.
      */
-    private function sameConnection(TableContract $from, TableContract $to): bool
+    private function sameConnection(SliceSource $from, SliceSource $to): bool
     {
-        return $from->connection() === $to->connection();
-    }
-
-    /**
-     * Resolve a target model class to its table via schema manager.
-     */
-    private function resolveTargetTable(string $modelClass): ?TableContract
-    {
-        try {
-            return $this->manager->resolve($modelClass);
-        } catch (\Throwable) {
-            // Model not registered or error resolving
-            return null;
-        }
+        return $from->provider() === $to->provider()
+            && $from->connection() === $to->connection();
     }
 }

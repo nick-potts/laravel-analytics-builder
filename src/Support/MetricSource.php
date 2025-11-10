@@ -2,36 +2,51 @@
 
 namespace NickPotts\Slice\Support;
 
-use NickPotts\Slice\Contracts\TableContract;
+use NickPotts\Slice\Contracts\SliceSource;
 
 /**
  * Value object representing a resolved metric source.
  *
  * Created when a provider resolves a metric reference like 'orders.total'.
- * Contains the resolved table, column name, and database connection.
+ * Contains the resolved slice definition and column name.
  */
 final class MetricSource
 {
-    public function __construct(
-        public readonly TableContract $table,
-        public readonly string $column,
-        public readonly ?string $connection = null,
-    ) {}
+    public readonly SliceDefinition $slice;
 
-    /**
-     * Get the fully qualified metric key (table.column).
-     */
-    public function key(): string
-    {
-        return $this->table->name().'.'.$this->column;
+    public function __construct(
+        SliceSource $slice,
+        public readonly string $column,
+    ) {
+        $definition = $slice instanceof SliceDefinition
+            ? $slice
+            : SliceDefinition::fromSource($slice);
+
+        $this->slice = $definition;
     }
 
     /**
-     * Get the table name.
+     * Get the fully qualified metric key (slice.identifier + column).
+     */
+    public function key(): string
+    {
+        return $this->slice->identifier().'.'.$this->column;
+    }
+
+    /**
+     * Get the slice/table name.
      */
     public function tableName(): string
     {
-        return $this->table->name();
+        return $this->slice->name();
+    }
+
+    /**
+     * Convenience accessor for the slice identifier.
+     */
+    public function sliceIdentifier(): string
+    {
+        return $this->slice->identifier();
     }
 
     /**
@@ -40,13 +55,5 @@ final class MetricSource
     public function columnName(): string
     {
         return $this->column;
-    }
-
-    /**
-     * Get the database connection (or table's default).
-     */
-    public function getConnection(): ?string
-    {
-        return $this->connection ?? $this->table->connection();
     }
 }

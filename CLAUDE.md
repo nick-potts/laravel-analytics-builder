@@ -10,7 +10,22 @@ automatically resolves joins and builds queries using Laravel's query builder.
 
 ## Core Architecture
 
-currently being built. see /planning
+**Slice** is a cube.js-inspired semantic analytics layer for Laravel. Unlike cube.js (JavaScript-based), Slice is Laravel-native with type-safe PHP 8.1 enums and Eloquent integration.
+
+### Three Core Auto-Features
+
+1. **Auto-Discovery** - `EloquentSchemaProvider` introspects Eloquent models without manual Table classes
+2. **Auto-Joins** - `JoinResolver` automatically finds relationship paths via graph traversal (BFS)
+3. **Auto-Aggregations** - `QueryBuilder` intelligently generates GROUP BY clauses and joins
+
+### Key Components
+
+- **SchemaProvider** - Pluggable providers for any data source (Eloquent, ClickHouse, APIs, etc.)
+- **QueryBuilder** - Builds optimized queries from normalized metrics
+- **JoinResolver** - Transitive relationship walking using provider metadata
+- **Aggregations** - Sum, Count, Avg with driver-specific SQL compilation
+
+**See:** `/planning/` for detailed documentation
 
 ## Testing Strategy
 

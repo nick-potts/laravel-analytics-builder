@@ -5,7 +5,7 @@ use NickPotts\Slice\Metrics\Aggregations\Sum;
 use NickPotts\Slice\SliceManager;
 use NickPotts\Slice\Support\SchemaProviderManager;
 use NickPotts\Slice\Tests\Support\MockSchemaProvider;
-use NickPotts\Slice\Tests\Support\MockTableContract;
+use NickPotts\Slice\Tests\Support\MockSliceSource;
 
 it('returns query builder', function () {
     $manager = new SchemaProviderManager;
@@ -18,7 +18,7 @@ it('returns query builder', function () {
 
 it('normalizes metrics to sources', function () {
     $manager = new SchemaProviderManager;
-    $table = new MockTableContract('orders');
+    $table = new MockSliceSource('orders');
     $provider = new MockSchemaProvider;
     $provider->registerTable($table)->setName('test');
     $manager->register($provider);
