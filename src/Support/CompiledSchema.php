@@ -2,7 +2,6 @@
 
 namespace NickPotts\Slice\Support;
 
-use NickPotts\Slice\Contracts\SliceSource;
 use NickPotts\Slice\Schemas\Dimensions\DimensionCatalog;
 use NickPotts\Slice\Schemas\Relations\RelationGraph;
 
@@ -142,7 +141,7 @@ final class CompiledSchema
      */
     public function getRelations(string $tableIdentifier): RelationGraph
     {
-        if (!isset($this->relations[$tableIdentifier])) {
+        if (! isset($this->relations[$tableIdentifier])) {
             throw new \RuntimeException(
                 "No relations found for table '{$tableIdentifier}' in compiled schema."
             );
@@ -160,7 +159,7 @@ final class CompiledSchema
      */
     public function getDimensions(string $tableIdentifier): DimensionCatalog
     {
-        if (!isset($this->dimensions[$tableIdentifier])) {
+        if (! isset($this->dimensions[$tableIdentifier])) {
             throw new \RuntimeException(
                 "No dimensions found for table '{$tableIdentifier}' in compiled schema."
             );
